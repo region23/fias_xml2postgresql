@@ -6,6 +6,8 @@
 # Folders
 _obj
 _test
+xml
+dbf
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -25,3 +27,5 @@ _testmain.go
 
 *.DS_Store
 *.xml
+*.DBF
+*.DBT
