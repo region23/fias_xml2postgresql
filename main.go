@@ -4,7 +4,7 @@ import (
 	"flag"
 	"runtime"
 	//"io/ioutil"
-	"github.com/pavlik/fias_xml2postgres/structures"
+	"github.com/pavlik/fias_xml2postgresql/structures"
 )
 
 func main() {
