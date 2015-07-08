@@ -1,5 +1,7 @@
 package structures
 
+import "encoding/xml"
+
 // Классификатор адресообразующих элементов
 type Object struct {
 	XMLName    xml.Name `xml:"Object"`

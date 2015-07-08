@@ -4,25 +4,48 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+
+	"github.com/go-gorp/gorp"
+	_ "github.com/lib/pq"
 )
 
 // Статус актуальности ФИАС
-type ActualStatus struct {
+type XmlObject struct {
 	XMLName   xml.Name `xml:"ActualStatus"`
 	ActStatId int      `xml:"ACTSTATID,attr"`
 	Name      string   `xml:"NAME,attr"`
 }
 
-// type ActualStatuses struct {
-// 	XMLName        xml.Name       `xml:"ActualStatuses"`
-// 	ActualStatuses []ActualStatus `xml:"ActualStatus"`
-// }
+type DBObject struct {
+	ActStatId int    `db:"actstat_id, primarykey"`
+	Name      string `db:"name"`
+}
 
-func (item ActualStatus) String() string {
+func xml2db(xml XmlObject) *DBObject {
+	obj := &DBObject{
+		Name:      xml.Name,
+		ActStatId: xml.ActStatId}
+	return obj
+}
+
+func (item XmlObject) String() string {
 	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)
 }
 
-func ExportActualStatus() {
+func ExportActualStatus(dbmap *gorp.DbMap) {
+	// Создаем таблицу
+	dbmap.AddTableWithName(DBObject{}, "actstat")
+	err := dbmap.DropTableIfExists(DBObject{})
+	if err != nil {
+		fmt.Println("Error on drop table:", err)
+		return
+	}
+	err = dbmap.CreateTablesIfNotExists()
+	if err != nil {
+		fmt.Println("Error on creating table:", err)
+		return
+	}
+
 	xmlFile, err := os.Open("xml/AS_ACTSTAT_20150705_c9027b5f-3370-4705-be8a-fa06793614ee.XML")
 	if err != nil {
 		fmt.Println("Error opening file:", err)
@@ -47,16 +70,24 @@ func ExportActualStatus() {
 			inElement = se.Name.Local
 			// ...and its name is "ActualStatus"
 			if inElement == "ActualStatus" {
-				var item ActualStatus
+				total++
+				var item XmlObject
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
 				decoder.DecodeElement(&item, &se)
-				fmt.Printf(item)
+				obj := xml2db(item)
+				err := dbmap.Insert(obj)
+				if err != nil {
+					fmt.Println("Error on creating table:", err)
+					return
+				}
+
+				fmt.Printf(item.String())
 			}
 		default:
 		}
 
 	}
 
-	//fmt.Printf("Total articles: %d \n", total)
+	fmt.Printf("Total items in ActualStatus: %d \n", total)
 }
