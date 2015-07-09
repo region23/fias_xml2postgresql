@@ -1,4 +1,4 @@
-package structures
+package actual_status
 
 import (
 	"encoding/xml"
@@ -32,7 +32,7 @@ func (item XmlObject) String() string {
 	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)
 }
 
-func ExportActualStatus(dbmap *gorp.DbMap) {
+func Export(dbmap *gorp.DbMap) {
 	// Создаем таблицу
 	dbmap.AddTableWithName(DBObject{}, "actstat")
 	err := dbmap.DropTableIfExists(DBObject{})
@@ -68,7 +68,7 @@ func ExportActualStatus(dbmap *gorp.DbMap) {
 		case xml.StartElement:
 			// If we just read a StartElement token
 			inElement = se.Name.Local
-			// ...and its name is "ActualStatus"
+
 			if inElement == "ActualStatus" {
 				total++
 				var item XmlObject
@@ -89,5 +89,5 @@ func ExportActualStatus(dbmap *gorp.DbMap) {
 
 	}
 
-	fmt.Printf("Total items in ActualStatus: %d \n", total)
+	fmt.Printf("Total processed items in ActualStatus: %d \n", total)
 }
