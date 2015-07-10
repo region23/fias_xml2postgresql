@@ -32,7 +32,7 @@ func (item XmlObject) String() string {
 	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)
 }
 
-func Export(dbmap *gorp.DbMap) {
+func Export(dbmap *gorp.DbMap, progress chan string) {
 	// Создаем таблицу
 	dbmap.AddTableWithName(DBObject{}, "actstat")
 	err := dbmap.DropTableIfExists(DBObject{})
@@ -82,7 +82,8 @@ func Export(dbmap *gorp.DbMap) {
 					return
 				}
 
-				fmt.Printf(item.String())
+				progress <- string(total)
+				//fmt.Printf(item.String())
 			}
 		default:
 		}

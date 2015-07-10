@@ -131,7 +131,7 @@ func xml2db(xml XmlObject) *DBObject {
 	return obj
 }
 
-func Export(dbmap *gorp.DbMap) {
+func Export(dbmap *gorp.DbMap, progress chan string) {
 	// Создаем таблицу
 	dbmap.AddTableWithName(DBObject{}, "addrobj")
 	err := dbmap.DropTableIfExists(DBObject{})
@@ -180,6 +180,8 @@ func Export(dbmap *gorp.DbMap) {
 					fmt.Println("Error on creating table:", err)
 					return
 				}
+
+				progress <- string(total)
 			}
 		default:
 		}

@@ -24,8 +24,12 @@ func main() {
 	dbmap := initDb()
 	defer dbmap.Db.Close()
 
-	go actual_status.Export(dbmap)
-	go address_object.Export(dbmap)
+	progress := make(chan string)
+
+	go actual_status.Export(dbmap, progress)
+	go address_object.Export(dbmap, progress)
+
+	fmt.Printf("\rOn %s", <-progress)
 
 	var input string
 	fmt.Scanln(&input)
