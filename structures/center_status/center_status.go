@@ -1,4 +1,4 @@
-package actual_status
+package center_status
 
 import (
 	"encoding/xml"
@@ -10,32 +10,31 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// Статус актуальности ФИАС
+const dateformat = "2006-01-02"
+
+// Статус центра
 type XmlObject struct {
-	XMLName   xml.Name `xml:"ActualStatus"`
-	ActStatId int      `xml:"ACTSTATID,attr"`
-	Name      string   `xml:"NAME,attr"`
+	XMLName    xml.Name `xml:"CenterStatus"`
+	CENTERSTID int      `xml:"CENTERSTID,attr"`
+	NAME       string   `xml:"NAME,attr"`
 }
 
 type DBObject struct {
-	ActStatId int    `db:"actstat_id, primarykey"`
-	Name      string `db:"name"`
+	CENTERSTID int    `db:"centerst_id, primarykey"`
+	NAME       string `db:"name"`
 }
 
 func xml2db(xml XmlObject) *DBObject {
 	obj := &DBObject{
-		Name:      xml.Name,
-		ActStatId: xml.ActStatId}
-	return obj
-}
+		CENTERSTID: xml.CENTERSTID,
+		NAME:       xml.NAME}
 
-func (item XmlObject) String() string {
-	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)
+	return obj
 }
 
 func Export(dbmap *gorp.DbMap) {
 	// Создаем таблицу
-	dbmap.AddTableWithName(DBObject{}, "actstat")
+	dbmap.AddTableWithName(DBObject{}, "centerst")
 	err := dbmap.DropTableIfExists(DBObject{})
 	if err != nil {
 		fmt.Println("Error on drop table:", err)
@@ -47,7 +46,7 @@ func Export(dbmap *gorp.DbMap) {
 		return
 	}
 
-	xmlFile, err := os.Open("xml/AS_ACTSTAT_20150705_c9027b5f-3370-4705-be8a-fa06793614ee.XML")
+	xmlFile, err := os.Open("xml/AS_CENTERST_20150705_201cd8d6-617e-4676-8bfb-b61416530d50.XML")
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -70,9 +69,10 @@ func Export(dbmap *gorp.DbMap) {
 			// If we just read a StartElement token
 			inElement = se.Name.Local
 
-			if inElement == "ActualStatus" {
+			if inElement == "CenterStatus" {
 				total++
 				var item XmlObject
+
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
 				decoder.DecodeElement(&item, &se)
@@ -84,13 +84,12 @@ func Export(dbmap *gorp.DbMap) {
 				}
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\rActualStatus: %s rows\n", s)
-				//fmt.Printf(item.String())
+				fmt.Printf("\rCenterStatus: %s rows", s)
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("Total processed items in ActualStatus: %d \n", total)
+	fmt.Printf("Total processed items in CenterStatus: %d \n", total)
 }

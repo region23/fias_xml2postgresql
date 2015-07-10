@@ -4,51 +4,54 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/go-gorp/gorp"
 	_ "github.com/lib/pq"
 )
 
+const dateformat = "2006-01-02"
+
 // Классификатор адресообразующих элементов
 type XmlObject struct {
-	XMLName    xml.Name  `xml:"Object"`
-	AOGUID     string    `xml:"AOGUID, attr"`
-	FORMALNAME string    `xml:"FORMALNAME, attr"`
-	REGIONCODE string    `xml:"REGIONCODE, attr"`
-	AUTOCODE   string    `xml:"AUTOCODE, attr"`
-	AREACODE   string    `xml:"AREACODE, attr"`
-	CITYCODE   string    `xml:"CITYCODE, attr"`
-	CTARCODE   string    `xml:"CTARCODE, attr"`
-	PLACECODE  string    `xml:"PLACECODE, attr"`
-	STREETCODE string    `xml:"STREETCODE, attr"`
-	EXTRCODE   string    `xml:"EXTRCODE, attr"`
-	SEXTCODE   string    `xml:"SEXTCODE, attr"`
-	OFFNAME    string    `xml:"OFFNAME, attr"`
-	POSTALCODE string    `xml:"POSTALCODE, attr"`
-	IFNSFL     string    `xml:"IFNSFL, attr"`
-	TERRIFNSFL string    `xml:"TERRIFNSFL, attr"`
-	IFNSUL     string    `xml:"IFNSUL, attr"`
-	TERRIFNSUL string    `xml:"TERRIFNSUL, attr"`
-	OKATO      string    `xml:"OKATO, attr"`
-	OKTMO      string    `xml:"OKTMO, attr"`
-	UPDATEDATE time.Time `xml:"UPDATEDATE, attr"`
-	SHORTNAME  string    `xml:"SHORTNAME, attr"`
-	AOLEVEL    int       `xml:"AOLEVEL, attr"`
-	PARENTGUID string    `xml:"PARENTGUID, attr"`
-	AOID       string    `xml:"AOID, attr"`
-	PREVID     string    `xml:"PREVID, attr"`
-	NEXTID     string    `xml:"NEXTID, attr"`
-	CODE       string    `xml:"CODE, attr"`
-	PLAINCODE  string    `xml:"PLAINCODE, attr"`
-	ACTSTATUS  int       `xml:"ACTSTATUS, attr"`
-	CENTSTATUS int       `xml:"CENTSTATUS, attr"`
-	OPERSTATUS int       `xml:"OPERSTATUS, attr"`
-	CURRSTATUS int       `xml:"CURRSTATUS, attr"`
-	STARTDATE  time.Time `xml:"STARTDATE, attr"`
-	ENDDATE    time.Time `xml:"ENDDATE, attr"`
-	NORMDOC    string    `xml:"NORMDOC, attr"`
-	LIVESTATUS bool      `xml:"LIVESTATUS, attr"`
+	XMLName    xml.Name `xml:"Object"`
+	AOGUID     string   `xml:"AOGUID,attr"`
+	FORMALNAME string   `xml:"FORMALNAME,attr"`
+	REGIONCODE string   `xml:"REGIONCODE,attr"`
+	AUTOCODE   string   `xml:"AUTOCODE,attr"`
+	AREACODE   string   `xml:"AREACODE,attr"`
+	CITYCODE   string   `xml:"CITYCODE,attr"`
+	CTARCODE   string   `xml:"CTARCODE,attr"`
+	PLACECODE  string   `xml:"PLACECODE,attr"`
+	STREETCODE string   `xml:"STREETCODE,attr"`
+	EXTRCODE   string   `xml:"EXTRCODE,attr"`
+	SEXTCODE   string   `xml:"SEXTCODE,attr"`
+	OFFNAME    string   `xml:"OFFNAME,attr"`
+	POSTALCODE string   `xml:"POSTALCODE,attr"`
+	IFNSFL     string   `xml:"IFNSFL,attr"`
+	TERRIFNSFL string   `xml:"TERRIFNSFL,attr"`
+	IFNSUL     string   `xml:"IFNSUL,attr"`
+	TERRIFNSUL string   `xml:"TERRIFNSUL,attr"`
+	OKATO      string   `xml:"OKATO,attr"`
+	OKTMO      string   `xml:"OKTMO,attr"`
+	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
+	SHORTNAME  string   `xml:"SHORTNAME,attr"`
+	AOLEVEL    int      `xml:"AOLEVEL,attr"`
+	PARENTGUID string   `xml:"PARENTGUID,attr"`
+	AOID       string   `xml:"AOID,attr"`
+	PREVID     string   `xml:"PREVID,attr"`
+	NEXTID     string   `xml:"NEXTID,attr"`
+	CODE       string   `xml:"CODE,attr"`
+	PLAINCODE  string   `xml:"PLAINCODE,attr"`
+	ACTSTATUS  int      `xml:"ACTSTATUS,attr"`
+	CENTSTATUS int      `xml:"CENTSTATUS,attr"`
+	OPERSTATUS int      `xml:"OPERSTATUS,attr"`
+	CURRSTATUS int      `xml:"CURRSTATUS,attr"`
+	STARTDATE  string   `xml:"STARTDATE,attr"`
+	ENDDATE    string   `xml:"ENDDATE,attr"`
+	NORMDOC    string   `xml:"NORMDOC,attr"`
+	LIVESTATUS bool     `xml:"LIVESTATUS,attr"`
 }
 
 type DBObject struct {
@@ -75,7 +78,7 @@ type DBObject struct {
 	SHORTNAME  string    `db:"short_name"`
 	AOLEVEL    int       `db:"ao_level"`
 	PARENTGUID string    `db:"parent_guid"`
-	AOID       string    `db:"ao_id"`
+	AOID       string    `db:"ao_id, primarykey"`
 	PREVID     string    `db:"prev_id"`
 	NEXTID     string    `db:"next_id"`
 	CODE       string    `db:"code"`
@@ -90,7 +93,7 @@ type DBObject struct {
 	LIVESTATUS bool      `db:"live_status"`
 }
 
-func xml2db(xml XmlObject) *DBObject {
+func xml2db(xml XmlObject) (*DBObject, error) {
 	obj := &DBObject{
 		AOGUID:     xml.AOGUID,
 		FORMALNAME: xml.FORMALNAME,
@@ -111,7 +114,6 @@ func xml2db(xml XmlObject) *DBObject {
 		TERRIFNSUL: xml.TERRIFNSUL,
 		OKATO:      xml.OKATO,
 		OKTMO:      xml.OKTMO,
-		UPDATEDATE: xml.UPDATEDATE,
 		SHORTNAME:  xml.SHORTNAME,
 		AOLEVEL:    xml.AOLEVEL,
 		PARENTGUID: xml.PARENTGUID,
@@ -124,14 +126,33 @@ func xml2db(xml XmlObject) *DBObject {
 		CENTSTATUS: xml.CENTSTATUS,
 		OPERSTATUS: xml.OPERSTATUS,
 		CURRSTATUS: xml.CURRSTATUS,
-		STARTDATE:  xml.STARTDATE,
-		ENDDATE:    xml.ENDDATE,
 		NORMDOC:    xml.NORMDOC,
 		LIVESTATUS: xml.LIVESTATUS}
-	return obj
+
+	var err error
+
+	obj.UPDATEDATE, err = time.Parse(dateformat, xml.UPDATEDATE)
+	if err != nil {
+		fmt.Println("Error parse UPDATEDATE: ", err)
+		return nil, err
+	}
+
+	obj.STARTDATE, err = time.Parse(dateformat, xml.STARTDATE)
+	if err != nil {
+		fmt.Println("Error parse STARTDATE: ", err)
+		return nil, err
+	}
+
+	obj.ENDDATE, err = time.Parse(dateformat, xml.ENDDATE)
+	if err != nil {
+		fmt.Println("Error parse ENDDATE: ", err)
+		return nil, err
+	}
+
+	return obj, nil
 }
 
-func Export(dbmap *gorp.DbMap, progress chan string) {
+func Export(dbmap *gorp.DbMap) {
 	// Создаем таблицу
 	dbmap.AddTableWithName(DBObject{}, "addrobj")
 	err := dbmap.DropTableIfExists(DBObject{})
@@ -171,17 +192,23 @@ func Export(dbmap *gorp.DbMap, progress chan string) {
 			if inElement == "Object" {
 				total++
 				var item XmlObject
+
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
 				decoder.DecodeElement(&item, &se)
-				obj := xml2db(item)
-				err := dbmap.Insert(obj)
+				obj, err := xml2db(item)
+				if err != nil {
+					fmt.Println("Error on mapping XML to DB object: ", err)
+					return
+				}
+				err = dbmap.Insert(obj)
 				if err != nil {
 					fmt.Println("Error on creating table:", err)
 					return
 				}
 
-				progress <- string(total)
+				s := strconv.Itoa(total)
+				fmt.Printf("\rObject: %s rows", s)
 			}
 		default:
 		}

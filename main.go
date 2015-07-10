@@ -2,37 +2,50 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"runtime"
 
 	"github.com/go-gorp/gorp"
 	_ "github.com/lib/pq"
-	//"io/ioutil"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
+	"github.com/pavlik/fias_xml2postgresql/structures/center_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/current_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/estate_status"
+
+	//"io/ioutil"
 )
 
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	fmt.Printf("Используемое количество ядер: %d\n", runtime.NumCPU())
 
-	//var format = flag.String("format", "xml", "File format for import (xml or dbf)")
-	//flag.Parse()
+	var format = flag.String("format", "xml", "File format for import (xml or dbf)")
+	flag.Parse()
 
 	// initialize the DbMap
 	dbmap := initDb()
 	defer dbmap.Db.Close()
 
-	progress := make(chan string)
+	//progress := make(chan string)
 
-	go actual_status.Export(dbmap, progress)
-	go address_object.Export(dbmap, progress)
+	if *format == "xml" {
+		fmt.Println("обработка XML-файлов")
+		actual_status.Export(dbmap)
+		address_object.Export(dbmap)
+		center_status.Export(dbmap)
+		current_status.Export(dbmap)
+		estate_status.Export(dbmap)
 
-	fmt.Printf("\rOn %s", <-progress)
+	} else if *format == "dbf" {
+		// todo: обработка DBF-файлов
+		fmt.Println("обработка DBF-файлов")
+	}
 
-	var input string
-	fmt.Scanln(&input)
+	// var input string
+	// fmt.Scanln(&input)
 }
 
 func initDb() *gorp.DbMap {
