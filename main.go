@@ -14,8 +14,6 @@ import (
 	"github.com/pavlik/fias_xml2postgresql/structures/center_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/current_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/estate_status"
-
-	//"io/ioutil"
 )
 
 func main() {
