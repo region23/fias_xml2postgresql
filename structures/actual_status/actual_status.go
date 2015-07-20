@@ -6,8 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/go-gorp/gorp"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
 // Статус актуальности ФИАС
@@ -17,37 +18,41 @@ type XmlObject struct {
 	Name      string   `xml:"NAME,attr"`
 }
 
-type DBObject struct {
-	ActStatId int    `db:"actstat_id, primarykey"`
-	Name      string `db:"name"`
-}
+// схема таблицы в БД
 
-func xml2db(xml XmlObject) *DBObject {
-	obj := &DBObject{
-		Name:      xml.Name,
-		ActStatId: xml.ActStatId}
-	return obj
-}
+const tableName = "actstat"
+
+const schema = `CREATE TABLE ` + tableName + ` (
+    act_stat_id INT UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+		PRIMARY KEY (act_stat_id));`
 
 func (item XmlObject) String() string {
 	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)
 }
 
-func Export(dbmap *gorp.DbMap) {
-	// Создаем таблицу
-	dbmap.AddTableWithName(DBObject{}, "actstat")
-	err := dbmap.DropTableIfExists(DBObject{})
-	if err != nil {
-		fmt.Println("Error on drop table:", err)
-		return
-	}
-	err = dbmap.CreateTablesIfNotExists()
-	if err != nil {
-		fmt.Println("Error on creating table:", err)
+func Export(db *sqlx.DB, format *string) {
+	helpers.DropAndCreateTable(schema, tableName, db)
+
+	var format2 string
+	format2 = *format
+	fileName, err2 := helpers.SearchFile(tableName, format2)
+	if err2 != nil {
+		fmt.Println("Error searching file:", err2)
 		return
 	}
 
-	xmlFile, err := os.Open("xml/AS_ACTSTAT_20150705_c9027b5f-3370-4705-be8a-fa06793614ee.XML")
+	pathToFile := format2 + "/" + fileName
+
+	// Подсчитываем, сколько элементов нужно обработать
+	countedElements, err := helpers.CountElementsInXML(pathToFile, "ActualStatus")
+	if err != nil {
+		fmt.Println("Error counting elements in XML file:", err)
+		return
+	}
+	fmt.Println("Необходимо обработать элементов: ", countedElements)
+
+	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -76,10 +81,10 @@ func Export(dbmap *gorp.DbMap) {
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
 				decoder.DecodeElement(&item, &se)
-				obj := xml2db(item)
-				err := dbmap.Insert(obj)
+				query := "INSERT INTO " + tableName + " (act_stat_id, name) VALUES ($1, $2)"
+				db.MustExec(query, item.ActStatId, item.Name)
 				if err != nil {
-					fmt.Println("Error on creating table:", err)
+					fmt.Println("Error on adding row:", err)
 					return
 				}
 
