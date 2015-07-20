@@ -1,19 +1,19 @@
 package main
 
 import (
-	"database/sql"
 	"flag"
 	"fmt"
 	"log"
 	"runtime"
 
-	"github.com/go-gorp/gorp"
+	"github.com/jmoiron/sqlx"
+
 	_ "github.com/lib/pq"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
-	"github.com/pavlik/fias_xml2postgresql/structures/center_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/current_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/estate_status"
+	// "github.com/pavlik/fias_xml2postgresql/structures/address_object"
+	// "github.com/pavlik/fias_xml2postgresql/structures/center_status"
+	// "github.com/pavlik/fias_xml2postgresql/structures/current_status"
+	// "github.com/pavlik/fias_xml2postgresql/structures/estate_status"
 )
 
 func main() {
@@ -24,18 +24,16 @@ func main() {
 	flag.Parse()
 
 	// initialize the DbMap
-	dbmap := initDb()
-	defer dbmap.Db.Close()
-
-	//progress := make(chan string)
+	db := initDb()
+	defer db.Close()
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
-		actual_status.Export(dbmap)
-		address_object.Export(dbmap)
-		center_status.Export(dbmap)
-		current_status.Export(dbmap)
-		estate_status.Export(dbmap)
+		actual_status.Export(db, format)
+		// address_object.Export(dbmap)
+		// center_status.Export(dbmap)
+		// current_status.Export(dbmap)
+		// estate_status.Export(dbmap)
 
 	} else if *format == "dbf" {
 		// todo: обработка DBF-файлов
@@ -46,16 +44,13 @@ func main() {
 	// fmt.Scanln(&input)
 }
 
-func initDb() *gorp.DbMap {
+func initDb() *sqlx.DB {
 	// connect to db using standard Go database/sql API
 	// use whatever database/sql driver you wish
-	db, err := sql.Open("postgres", "user=dev dbname=fias password=dev sslmode=disable")
-	checkErr(err, "sql.Open failed")
+	db, err := sqlx.Open("postgres", "user=dev dbname=fias password=dev sslmode=disable")
+	checkErr(err, "sqlx.Open failed")
 
-	// construct a gorp DbMap
-	dbmap := &gorp.DbMap{Db: db, Dialect: gorp.PostgresDialect{}}
-
-	return dbmap
+	return db
 }
 
 func checkErr(err error, msg string) {
