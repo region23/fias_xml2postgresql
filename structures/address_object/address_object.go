@@ -9,10 +9,12 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
 const dateformat = "2006-01-02"
 const tableName = "addrobj"
+const elementName = "Object"
 
 // Классификатор адресообразующих элементов
 type XmlObject struct {
@@ -56,7 +58,7 @@ type XmlObject struct {
 }
 
 const schema = `CREATE TABLE ` + tableName + ` (
-    ao_guid UUID UNIQUE NOT NULL,
+    ao_guid UUID NOT NULL,
     formal_name VARCHAR(120) NOT NULL,
 		region_code VARCHAR(2) NOT NULL,
 		auto_code VARCHAR(1) NOT NULL,
@@ -94,21 +96,28 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		live_status INT NOT NULL,
 		PRIMARY KEY (ao_id));`
 
-func Export(db *sqlx.DB) {
-	// Создаем таблицу
-	dbmap.AddTableWithName(DBObject{}, "addrobj")
-	err := dbmap.DropTableIfExists(DBObject{})
-	if err != nil {
-		fmt.Println("Error on drop table:", err)
-		return
-	}
-	err = dbmap.CreateTablesIfNotExists()
-	if err != nil {
-		fmt.Println("Error on creating table:", err)
+func Export(db *sqlx.DB, format *string) {
+	helpers.DropAndCreateTable(schema, tableName, db)
+
+	var format2 string
+	format2 = *format
+	fileName, err2 := helpers.SearchFile(tableName, format2)
+	if err2 != nil {
+		fmt.Println("Error searching file:", err2)
 		return
 	}
 
-	xmlFile, err := os.Open("xml/AS_ADDROBJ_20150705_e3a7c988-3be1-456a-a329-ba78c181bb1a.XML")
+	pathToFile := format2 + "/" + fileName
+
+	// Подсчитываем, сколько элементов нужно обработать
+	// countedElements, err := helpers.CountElementsInXML(pathToFile, elementName)
+	// if err != nil {
+	// 	fmt.Println("Error counting elements in XML file:", err)
+	// 	return
+	// }
+	// fmt.Println("Необходимо обработать элементов: ", countedElements)
+
+	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -131,52 +140,124 @@ func Export(db *sqlx.DB) {
 			// If we just read a StartElement token
 			inElement = se.Name.Local
 
-			if inElement == "Object" {
+			if inElement == elementName {
 				total++
 				var item XmlObject
 
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
 				decoder.DecodeElement(&item, &se)
-				obj, err := xml2db(item)
+
+				var err error
+				var updDate, startDate, endDate time.Time
+
+				updDate, err = time.Parse(dateformat, item.UPDATEDATE)
 				if err != nil {
-					fmt.Println("Error on mapping XML to DB object: ", err)
+					fmt.Println("Error parse UPDATEDATE: ", err)
 					return
 				}
 
-				var err error
-
-				obj.UPDATEDATE, err = time.Parse(dateformat, xml.UPDATEDATE)
-				if err != nil {
-					fmt.Println("Error parse UPDATEDATE: ", err)
-					return nil, err
-				}
-
-				obj.STARTDATE, err = time.Parse(dateformat, xml.STARTDATE)
+				startDate, err = time.Parse(dateformat, item.STARTDATE)
 				if err != nil {
 					fmt.Println("Error parse STARTDATE: ", err)
-					return nil, err
+					return
 				}
 
-				obj.ENDDATE, err = time.Parse(dateformat, xml.ENDDATE)
+				endDate, err = time.Parse(dateformat, item.ENDDATE)
 				if err != nil {
 					fmt.Println("Error parse ENDDATE: ", err)
-					return nil, err
+					return
 				}
 
-				err = dbmap.Insert(obj)
+				query := `INSERT INTO ` + tableName + ` (ao_guid,
+					formal_name,
+					region_code,
+					auto_code,
+					area_code,
+					city_code,
+					ctar_code,
+					place_code,
+					street_code,
+					extr_code,
+					sext_code,
+					off_name,
+					postal_code,
+					ifns_fl,
+					terr_ifns_fl,
+					ifns_ul,
+					terr_ifns_ul,
+					okato,
+					oktmo,
+					update_date,
+					short_name,
+					ao_level,
+					parent_guid,
+					ao_id,
+					prev_id,
+					next_id,
+					code,
+					plain_code,
+					act_status,
+					cent_status,
+					oper_status,
+					curr_status,
+					start_date,
+					end_date,
+					norm_doc,
+					live_status
+					) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+						$11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+						$21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
+						$31, $32, $33, $34, $35, $36)`
+				db.MustExec(query,
+					item.AOGUID,
+					item.FORMALNAME,
+					item.REGIONCODE,
+					item.AUTOCODE,
+					item.AREACODE,
+					item.CITYCODE,
+					item.CTARCODE,
+					item.PLACECODE,
+					item.STREETCODE,
+					item.EXTRCODE,
+					item.SEXTCODE,
+					item.OFFNAME,
+					item.POSTALCODE,
+					item.IFNSFL,
+					item.TERRIFNSFL,
+					item.IFNSUL,
+					item.TERRIFNSUL,
+					item.OKATO,
+					item.OKTMO,
+					updDate,
+					item.SHORTNAME,
+					item.AOLEVEL,
+					item.PARENTGUID,
+					item.AOID,
+					item.PREVID,
+					item.NEXTID,
+					item.CODE,
+					item.PLAINCODE,
+					item.ACTSTATUS,
+					item.CENTSTATUS,
+					item.OPERSTATUS,
+					item.CURRSTATUS,
+					startDate,
+					endDate,
+					item.NORMDOC,
+					item.LIVESTATUS)
 				if err != nil {
-					fmt.Println("Error on creating table:", err)
+					fmt.Println("Error on adding row:", err)
 					return
 				}
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\rObject: %s rows", s)
+				fmt.Printf("\r"+elementName+": %s rows", s)
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("Total processed items in AddressObjects: %d \n", total)
+	fmt.Printf("Total processed items in "+elementName+": %d \n", total)
 }

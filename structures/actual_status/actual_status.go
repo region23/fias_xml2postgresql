@@ -21,6 +21,7 @@ type XmlObject struct {
 // схема таблицы в БД
 
 const tableName = "actstat"
+const elementName = "ActualStatus"
 
 const schema = `CREATE TABLE ` + tableName + ` (
     act_stat_id INT UNIQUE NOT NULL,
@@ -45,7 +46,7 @@ func Export(db *sqlx.DB, format *string) {
 	pathToFile := format2 + "/" + fileName
 
 	// Подсчитываем, сколько элементов нужно обработать
-	countedElements, err := helpers.CountElementsInXML(pathToFile, "ActualStatus")
+	countedElements, err := helpers.CountElementsInXML(pathToFile, elementName)
 	if err != nil {
 		fmt.Println("Error counting elements in XML file:", err)
 		return
@@ -75,7 +76,7 @@ func Export(db *sqlx.DB, format *string) {
 			// If we just read a StartElement token
 			inElement = se.Name.Local
 
-			if inElement == "ActualStatus" {
+			if inElement == elementName {
 				total++
 				var item XmlObject
 				// decode a whole chunk of following XML into the
@@ -89,7 +90,7 @@ func Export(db *sqlx.DB, format *string) {
 				}
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\rActualStatus: %s rows\n", s)
+				fmt.Printf("\r"+elementName+": %s rows\n", s)
 				//fmt.Printf(item.String())
 			}
 		default:
@@ -97,5 +98,5 @@ func Export(db *sqlx.DB, format *string) {
 
 	}
 
-	fmt.Printf("Total processed items in ActualStatus: %d \n", total)
+	fmt.Printf("Total processed items in "+elementName+": %d \n", total)
 }
