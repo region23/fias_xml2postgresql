@@ -7,11 +7,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-gorp/gorp"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 const dateformat = "2006-01-02"
+const tableName = "addrobj"
 
 // Классификатор адресообразующих элементов
 type XmlObject struct {
@@ -54,105 +55,46 @@ type XmlObject struct {
 	LIVESTATUS bool     `xml:"LIVESTATUS,attr"`
 }
 
-type DBObject struct {
-	AOGUID     string    `db:"ao_guid"`
-	FORMALNAME string    `db:"formal_name"`
-	REGIONCODE string    `db:"region_code"`
-	AUTOCODE   string    `db:"auto_code"`
-	AREACODE   string    `db:"area_code"`
-	CITYCODE   string    `db:"city_code"`
-	CTARCODE   string    `db:"ctar_code"`
-	PLACECODE  string    `db:"place_code"`
-	STREETCODE string    `db:"street_code"`
-	EXTRCODE   string    `db:"extr_code"`
-	SEXTCODE   string    `db:"sext_code"`
-	OFFNAME    string    `db:"off_name"`
-	POSTALCODE string    `db:"postal_code"`
-	IFNSFL     string    `db:"ifnsfl"`
-	TERRIFNSFL string    `db:"terrifnsfl"`
-	IFNSUL     string    `db:"ifnsul"`
-	TERRIFNSUL string    `db:"terrifnsul"`
-	OKATO      string    `db:"okato"`
-	OKTMO      string    `db:"oktmo"`
-	UPDATEDATE time.Time `db:"update_date"`
-	SHORTNAME  string    `db:"short_name"`
-	AOLEVEL    int       `db:"ao_level"`
-	PARENTGUID string    `db:"parent_guid"`
-	AOID       string    `db:"ao_id, primarykey"`
-	PREVID     string    `db:"prev_id"`
-	NEXTID     string    `db:"next_id"`
-	CODE       string    `db:"code"`
-	PLAINCODE  string    `db:"plain_code"`
-	ACTSTATUS  int       `db:"act_status"`
-	CENTSTATUS int       `db:"cent_status"`
-	OPERSTATUS int       `db:"oper_status"`
-	CURRSTATUS int       `db:"curr_status"`
-	STARTDATE  time.Time `db:"start_date"`
-	ENDDATE    time.Time `db:"end_date"`
-	NORMDOC    string    `db:"norm_doc"`
-	LIVESTATUS bool      `db:"live_status"`
-}
+const schema = `CREATE TABLE ` + tableName + ` (
+    ao_guid UUID UNIQUE NOT NULL,
+    formal_name VARCHAR(120) NOT NULL,
+		region_code VARCHAR(2) NOT NULL,
+		auto_code VARCHAR(1) NOT NULL,
+		area_code VARCHAR(3) NOT NULL,
+		city_code VARCHAR(3) NOT NULL,
+		ctar_code VARCHAR(3) NOT NULL,
+		place_code VARCHAR(3) NOT NULL,
+		street_code VARCHAR(4),
+		extr_code VARCHAR(4) NOT NULL,
+		sext_code VARCHAR(3) NOT NULL,
+		off_name VARCHAR(120),
+		postal_code VARCHAR(6),
+		ifns_fl VARCHAR(4),
+		terr_ifns_fl VARCHAR(4),
+		ifns_ul VARCHAR(4),
+		terr_ifns_ul VARCHAR(4),
+		okato VARCHAR(11),
+		oktmo VARCHAR(8),
+		update_date TIMESTAMP NOT NULL,
+		short_name VARCHAR(10) NOT NULL,
+		ao_level INT NOT NULL,
+		parent_guid UUID,
+		ao_id UUID NOT NULL,
+		prev_id UUID,
+		next_id UUID,
+		code VARCHAR(17),
+		plain_code VARCHAR(15),
+		act_status INT NOT NULL,
+		cent_status INT NOT NULL,
+		oper_status INT NOT NULL,
+		curr_status INT NOT NULL,
+		start_date TIMESTAMP NOT NULL,
+		end_date TIMESTAMP NOT NULL,
+		norm_doc UUID,
+		live_status INT NOT NULL,
+		PRIMARY KEY (ao_id));`
 
-func xml2db(xml XmlObject) (*DBObject, error) {
-	obj := &DBObject{
-		AOGUID:     xml.AOGUID,
-		FORMALNAME: xml.FORMALNAME,
-		REGIONCODE: xml.REGIONCODE,
-		AUTOCODE:   xml.AUTOCODE,
-		AREACODE:   xml.AREACODE,
-		CITYCODE:   xml.CITYCODE,
-		CTARCODE:   xml.CTARCODE,
-		PLACECODE:  xml.PLACECODE,
-		STREETCODE: xml.STREETCODE,
-		EXTRCODE:   xml.EXTRCODE,
-		SEXTCODE:   xml.SEXTCODE,
-		OFFNAME:    xml.OFFNAME,
-		POSTALCODE: xml.POSTALCODE,
-		IFNSFL:     xml.IFNSFL,
-		TERRIFNSFL: xml.TERRIFNSFL,
-		IFNSUL:     xml.IFNSUL,
-		TERRIFNSUL: xml.TERRIFNSUL,
-		OKATO:      xml.OKATO,
-		OKTMO:      xml.OKTMO,
-		SHORTNAME:  xml.SHORTNAME,
-		AOLEVEL:    xml.AOLEVEL,
-		PARENTGUID: xml.PARENTGUID,
-		AOID:       xml.AOID,
-		PREVID:     xml.PREVID,
-		NEXTID:     xml.NEXTID,
-		CODE:       xml.CODE,
-		PLAINCODE:  xml.PLAINCODE,
-		ACTSTATUS:  xml.ACTSTATUS,
-		CENTSTATUS: xml.CENTSTATUS,
-		OPERSTATUS: xml.OPERSTATUS,
-		CURRSTATUS: xml.CURRSTATUS,
-		NORMDOC:    xml.NORMDOC,
-		LIVESTATUS: xml.LIVESTATUS}
-
-	var err error
-
-	obj.UPDATEDATE, err = time.Parse(dateformat, xml.UPDATEDATE)
-	if err != nil {
-		fmt.Println("Error parse UPDATEDATE: ", err)
-		return nil, err
-	}
-
-	obj.STARTDATE, err = time.Parse(dateformat, xml.STARTDATE)
-	if err != nil {
-		fmt.Println("Error parse STARTDATE: ", err)
-		return nil, err
-	}
-
-	obj.ENDDATE, err = time.Parse(dateformat, xml.ENDDATE)
-	if err != nil {
-		fmt.Println("Error parse ENDDATE: ", err)
-		return nil, err
-	}
-
-	return obj, nil
-}
-
-func Export(dbmap *gorp.DbMap) {
+func Export(db *sqlx.DB) {
 	// Создаем таблицу
 	dbmap.AddTableWithName(DBObject{}, "addrobj")
 	err := dbmap.DropTableIfExists(DBObject{})
@@ -201,6 +143,27 @@ func Export(dbmap *gorp.DbMap) {
 					fmt.Println("Error on mapping XML to DB object: ", err)
 					return
 				}
+
+				var err error
+
+				obj.UPDATEDATE, err = time.Parse(dateformat, xml.UPDATEDATE)
+				if err != nil {
+					fmt.Println("Error parse UPDATEDATE: ", err)
+					return nil, err
+				}
+
+				obj.STARTDATE, err = time.Parse(dateformat, xml.STARTDATE)
+				if err != nil {
+					fmt.Println("Error parse STARTDATE: ", err)
+					return nil, err
+				}
+
+				obj.ENDDATE, err = time.Parse(dateformat, xml.ENDDATE)
+				if err != nil {
+					fmt.Println("Error parse ENDDATE: ", err)
+					return nil, err
+				}
+
 				err = dbmap.Insert(obj)
 				if err != nil {
 					fmt.Println("Error on creating table:", err)

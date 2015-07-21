@@ -12,6 +12,7 @@ func DropAndCreateTable(schema string, tableName string, db *sqlx.DB) (bool, err
 		//fmt.Println("Error on check table '"+tableName+"':", err)
 		return false, err
 	}
+	defer rows.Close()
 
 	// И если есть удаляем
 	rowsCount := 0
