@@ -27,33 +27,33 @@ type XmlObject struct {
 	CITYCODE   string   `xml:"CITYCODE,attr"`
 	CTARCODE   string   `xml:"CTARCODE,attr"`
 	PLACECODE  string   `xml:"PLACECODE,attr"`
-	STREETCODE string   `xml:"STREETCODE,attr"`
+	STREETCODE *string  `xml:"STREETCODE,attr,omitempty"`
 	EXTRCODE   string   `xml:"EXTRCODE,attr"`
 	SEXTCODE   string   `xml:"SEXTCODE,attr"`
-	OFFNAME    string   `xml:"OFFNAME,attr"`
-	POSTALCODE string   `xml:"POSTALCODE,attr"`
-	IFNSFL     string   `xml:"IFNSFL,attr"`
-	TERRIFNSFL string   `xml:"TERRIFNSFL,attr"`
-	IFNSUL     string   `xml:"IFNSUL,attr"`
-	TERRIFNSUL string   `xml:"TERRIFNSUL,attr"`
-	OKATO      string   `xml:"OKATO,attr"`
-	OKTMO      string   `xml:"OKTMO,attr"`
+	OFFNAME    *string  `xml:"OFFNAME,attr,omitempty"`
+	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
+	IFNSFL     *string  `xml:"IFNSFL,attr,omitempty"`
+	TERRIFNSFL *string  `xml:"TERRIFNSFL,attr,omitempty"`
+	IFNSUL     *string  `xml:"IFNSUL,attr,omitempty"`
+	TERRIFNSUL *string  `xml:"TERRIFNSUL,attr,omitempty"`
+	OKATO      *string  `xml:"OKATO,attr,omitempty"`
+	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
 	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
 	SHORTNAME  string   `xml:"SHORTNAME,attr"`
 	AOLEVEL    int      `xml:"AOLEVEL,attr"`
-	PARENTGUID string   `xml:"PARENTGUID,attr"`
+	PARENTGUID *string  `xml:"PARENTGUID,attr,omitempty"`
 	AOID       string   `xml:"AOID,attr"`
-	PREVID     string   `xml:"PREVID,attr"`
-	NEXTID     string   `xml:"NEXTID,attr"`
-	CODE       string   `xml:"CODE,attr"`
-	PLAINCODE  string   `xml:"PLAINCODE,attr"`
+	PREVID     *string  `xml:"PREVID,attr,omitempty"`
+	NEXTID     *string  `xml:"NEXTID,attr,omitempty"`
+	CODE       *string  `xml:"CODE,attr,omitempty"`
+	PLAINCODE  *string  `xml:"PLAINCODE,attr,omitempty"`
 	ACTSTATUS  int      `xml:"ACTSTATUS,attr"`
 	CENTSTATUS int      `xml:"CENTSTATUS,attr"`
 	OPERSTATUS int      `xml:"OPERSTATUS,attr"`
 	CURRSTATUS int      `xml:"CURRSTATUS,attr"`
 	STARTDATE  string   `xml:"STARTDATE,attr"`
 	ENDDATE    string   `xml:"ENDDATE,attr"`
-	NORMDOC    string   `xml:"NORMDOC,attr"`
+	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty"`
 	LIVESTATUS bool     `xml:"LIVESTATUS,attr"`
 }
 
@@ -76,7 +76,7 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		ifns_ul VARCHAR(4),
 		terr_ifns_ul VARCHAR(4),
 		okato VARCHAR(11),
-		oktmo VARCHAR(8),
+		oktmo VARCHAR(11),
 		update_date TIMESTAMP NOT NULL,
 		short_name VARCHAR(10) NOT NULL,
 		ao_level INT NOT NULL,
@@ -93,7 +93,7 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		start_date TIMESTAMP NOT NULL,
 		end_date TIMESTAMP NOT NULL,
 		norm_doc UUID,
-		live_status INT NOT NULL,
+		live_status BOOL NOT NULL,
 		PRIMARY KEY (ao_id));`
 
 func Export(db *sqlx.DB, format *string) {
@@ -110,12 +110,13 @@ func Export(db *sqlx.DB, format *string) {
 	pathToFile := format2 + "/" + fileName
 
 	// Подсчитываем, сколько элементов нужно обработать
-	// countedElements, err := helpers.CountElementsInXML(pathToFile, elementName)
-	// if err != nil {
-	// 	fmt.Println("Error counting elements in XML file:", err)
-	// 	return
-	// }
-	// fmt.Println("Необходимо обработать элементов: ", countedElements)
+	fmt.Println("Подсчет строк")
+	countedElements, err := helpers.CountElementsInXML(pathToFile, elementName)
+	if err != nil {
+		fmt.Println("Error counting elements in XML file:", err)
+		return
+	}
+	fmt.Println("В ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -147,6 +148,8 @@ func Export(db *sqlx.DB, format *string) {
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
 				decoder.DecodeElement(&item, &se)
+
+				//fmt.Println(item, "\n\n")
 
 				var err error
 				var updDate, startDate, endDate time.Time
@@ -209,6 +212,7 @@ func Export(db *sqlx.DB, format *string) {
 						$11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
 						$21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
 						$31, $32, $33, $34, $35, $36)`
+
 				db.MustExec(query,
 					item.AOGUID,
 					item.FORMALNAME,
@@ -259,5 +263,5 @@ func Export(db *sqlx.DB, format *string) {
 
 	}
 
-	fmt.Printf("Total processed items in "+elementName+": %d \n", total)
+	fmt.Printf("Всего в "+elementName+" обработано %d строк\n", total)
 }

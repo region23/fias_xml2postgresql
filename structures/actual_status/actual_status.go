@@ -51,7 +51,7 @@ func Export(db *sqlx.DB, format *string) {
 		fmt.Println("Error counting elements in XML file:", err)
 		return
 	}
-	fmt.Println("Необходимо обработать элементов: ", countedElements)
+	fmt.Println("В ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -98,5 +98,5 @@ func Export(db *sqlx.DB, format *string) {
 
 	}
 
-	fmt.Printf("Total processed items in "+elementName+": %d \n", total)
+	fmt.Printf("Всего в "+elementName+" обработано %d строк\n", total)
 }
