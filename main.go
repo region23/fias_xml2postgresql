@@ -11,6 +11,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
+	"github.com/pavlik/fias_xml2postgresql/structures/center_status"
 	// "github.com/pavlik/fias_xml2postgresql/structures/center_status"
 	// "github.com/pavlik/fias_xml2postgresql/structures/current_status"
 	// "github.com/pavlik/fias_xml2postgresql/structures/estate_status"
@@ -29,9 +30,9 @@ func main() {
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
-		actual_status.Export(db, format)
-		address_object.Export(db, format)
-		// center_status.Export(dbmap)
+		go actual_status.Export(db, format)
+		go address_object.Export(db, format)
+		go center_status.Export(db, format)
 		// current_status.Export(dbmap)
 		// estate_status.Export(dbmap)
 
@@ -40,8 +41,8 @@ func main() {
 		fmt.Println("обработка DBF-файлов")
 	}
 
-	// var input string
-	// fmt.Scanln(&input)
+	var input string
+	fmt.Scanln(&input)
 }
 
 func initDb() *sqlx.DB {

@@ -6,11 +6,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/go-gorp/gorp"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
 const dateformat = "2006-01-02"
+const tableName = "centerst"
+const elementName = "CenterStatus"
 
 // Статус центра
 type XmlObject struct {
@@ -19,34 +22,34 @@ type XmlObject struct {
 	NAME       string   `xml:"NAME,attr"`
 }
 
-type DBObject struct {
-	CENTERSTID int    `db:"centerst_id, primarykey"`
-	NAME       string `db:"name"`
-}
+const schema = `CREATE TABLE ` + tableName + ` (
+    center_st_id INT UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+		PRIMARY KEY (center_st_id));`
 
-func xml2db(xml XmlObject) *DBObject {
-	obj := &DBObject{
-		CENTERSTID: xml.CENTERSTID,
-		NAME:       xml.NAME}
+func Export(db *sqlx.DB, format *string) {
+	helpers.DropAndCreateTable(schema, tableName, db)
 
-	return obj
-}
-
-func Export(dbmap *gorp.DbMap) {
-	// Создаем таблицу
-	dbmap.AddTableWithName(DBObject{}, "centerst")
-	err := dbmap.DropTableIfExists(DBObject{})
-	if err != nil {
-		fmt.Println("Error on drop table:", err)
-		return
-	}
-	err = dbmap.CreateTablesIfNotExists()
-	if err != nil {
-		fmt.Println("Error on creating table:", err)
+	var format2 string
+	format2 = *format
+	fileName, err2 := helpers.SearchFile(tableName, format2)
+	if err2 != nil {
+		fmt.Println("Error searching file:", err2)
 		return
 	}
 
-	xmlFile, err := os.Open("xml/AS_CENTERST_20150705_201cd8d6-617e-4676-8bfb-b61416530d50.XML")
+	pathToFile := format2 + "/" + fileName
+
+	// Подсчитываем, сколько элементов нужно обработать
+	//fmt.Println("Подсчет строк")
+	_, err := helpers.CountElementsInXML(pathToFile, elementName)
+	if err != nil {
+		fmt.Println("Error counting elements in XML file:", err)
+		return
+	}
+	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
+
+	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -75,21 +78,21 @@ func Export(dbmap *gorp.DbMap) {
 
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
-				decoder.DecodeElement(&item, &se)
-				obj := xml2db(item)
-				err := dbmap.Insert(obj)
+				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
-					fmt.Println("Error on creating table:", err)
+					fmt.Println("Error in decode element:", err)
 					return
 				}
+				query := "INSERT INTO " + tableName + " (center_st_id, name) VALUES ($1, $2)"
+				db.MustExec(query, item.CENTERSTID, item.NAME)
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\rCenterStatus: %s rows", s)
+				fmt.Printf("\r"+elementName+": %s rows\n", s)
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("Total processed items in CenterStatus: %d \n", total)
+	fmt.Printf("\nTotal processed items in "+elementName+": %d \n", total)
 }

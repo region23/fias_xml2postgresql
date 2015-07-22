@@ -110,13 +110,13 @@ func Export(db *sqlx.DB, format *string) {
 	pathToFile := format2 + "/" + fileName
 
 	// Подсчитываем, сколько элементов нужно обработать
-	fmt.Println("Подсчет строк")
-	countedElements, err := helpers.CountElementsInXML(pathToFile, elementName)
+	//fmt.Println("Подсчет строк")
+	_, err := helpers.CountElementsInXML(pathToFile, elementName)
 	if err != nil {
 		fmt.Println("Error counting elements in XML file:", err)
 		return
 	}
-	fmt.Println("В ", elementName, " содержится ", countedElements, " строк")
+	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -147,7 +147,11 @@ func Export(db *sqlx.DB, format *string) {
 
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
-				decoder.DecodeElement(&item, &se)
+				err = decoder.DecodeElement(&item, &se)
+				if err != nil {
+					fmt.Println("Error in decode element:", err)
+					return
+				}
 
 				//fmt.Println(item, "\n\n")
 
@@ -250,10 +254,6 @@ func Export(db *sqlx.DB, format *string) {
 					endDate,
 					item.NORMDOC,
 					item.LIVESTATUS)
-				if err != nil {
-					fmt.Println("Error on adding row:", err)
-					return
-				}
 
 				s := strconv.Itoa(total)
 				fmt.Printf("\r"+elementName+": %s rows", s)
@@ -263,5 +263,5 @@ func Export(db *sqlx.DB, format *string) {
 
 	}
 
-	fmt.Printf("Всего в "+elementName+" обработано %d строк\n", total)
+	fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
 }

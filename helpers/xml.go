@@ -35,6 +35,7 @@ func CountElementsInXML(pathToFile string, countedElement string) (int, error) {
 
 			if inElement == countedElement {
 				total++
+				fmt.Printf("\rПодсчет строк: %d\n", total)
 			}
 		default:
 		}
