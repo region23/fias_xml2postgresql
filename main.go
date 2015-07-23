@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/nsf/termbox-go"
 
 	_ "github.com/lib/pq"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
@@ -19,8 +20,11 @@ import (
 	// "github.com/pavlik/fias_xml2postgresql/structures/estate_status"
 )
 
+var output_mode = termbox.OutputNormal
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	fmt.Printf("Используемое количество ядер: %d\n", runtime.NumCPU())
 
 	var format = flag.String("format", "xml", "File format for import (xml or dbf)")
@@ -30,9 +34,9 @@ func main() {
 	db := initDb()
 	defer db.Close()
 
-	var as_stat chan string = make(chan string, 1)
-	var ao_stat chan string = make(chan string, 1)
-	var cs_stat chan string = make(chan string, 1)
+	var as_stat chan string = make(chan string, 1000)
+	var ao_stat chan string = make(chan string, 1000)
+	var cs_stat chan string = make(chan string, 1000)
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
@@ -47,18 +51,46 @@ func main() {
 		fmt.Println("обработка DBF-файлов")
 	}
 
+	err := termbox.Init()
+	if err != nil {
+		panic(err)
+	}
+	defer termbox.Close()
+
+	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
+
 	var msg1, msg2, msg3 string
+	timer := time.After(time.Second * 1)
 	for {
+		select {
+		case <-timer:
+			progressPrint(msg1, msg2, msg3)
+			timer = time.After(time.Second * 1)
+		default:
+		}
 		select {
 		case msg1 = <-as_stat:
 		case msg2 = <-ao_stat:
 		case msg3 = <-cs_stat:
 		}
-		progressPrint(msg1, msg2, msg3)
+
 	}
 
-	var input string
-	fmt.Scanln(&input)
+	termbox.Flush()
+
+loop:
+	for {
+		switch ev := termbox.PollEvent(); ev.Type {
+		case termbox.EventKey:
+			switch ev.Key {
+			case termbox.KeyEsc:
+				break loop
+			}
+		}
+	}
+
+	//var input string
+	//fmt.Scanln(&input)
 }
 
 func progressPrint(msgs ...string) {
@@ -69,8 +101,9 @@ func progressPrint(msgs ...string) {
 		buffer.WriteString("\n")
 	}
 
-	fmt.Println(buffer.String())
-	time.Sleep(time.Second * 1)
+	termbox.SetCell(0, 0, rune(2), termbox.ColorDefault, termbox.ColorGreen)
+
+	//fmt.Println(buffer.String())
 }
 
 func initDb() *sqlx.DB {
