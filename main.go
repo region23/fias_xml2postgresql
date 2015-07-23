@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -29,9 +30,9 @@ func main() {
 	db := initDb()
 	defer db.Close()
 
-	var as_stat chan string = make(chan string)
-	var ao_stat chan string = make(chan string)
-	var cs_stat chan string = make(chan string)
+	var as_stat chan string = make(chan string, 1)
+	var ao_stat chan string = make(chan string, 1)
+	var cs_stat chan string = make(chan string, 1)
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
@@ -48,9 +49,11 @@ func main() {
 
 	var msg1, msg2, msg3 string
 	for {
-		msg1 = <-as_stat
-		msg2 = <-ao_stat
-		msg3 = <-cs_stat
+		select {
+		case msg1 = <-as_stat:
+		case msg2 = <-ao_stat:
+		case msg3 = <-cs_stat:
+		}
 		progressPrint(msg1, msg2, msg3)
 	}
 
@@ -59,12 +62,14 @@ func main() {
 }
 
 func progressPrint(msgs ...string) {
-	var v string
-	for _, v = range msgs {
-		v = v + "\n"
+	var buffer bytes.Buffer
+
+	for _, v := range msgs {
+		buffer.WriteString(v)
+		buffer.WriteString("\n")
 	}
 
-	fmt.Println(v)
+	fmt.Println(buffer.String())
 	time.Sleep(time.Second * 1)
 }
 
