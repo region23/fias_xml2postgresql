@@ -96,7 +96,7 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		live_status BOOL NOT NULL,
 		PRIMARY KEY (ao_id));`
 
-func Export(db *sqlx.DB, format *string) {
+func Export(c chan string, db *sqlx.DB, format *string) {
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string
@@ -111,11 +111,11 @@ func Export(db *sqlx.DB, format *string) {
 
 	// Подсчитываем, сколько элементов нужно обработать
 	//fmt.Println("Подсчет строк")
-	_, err := helpers.CountElementsInXML(pathToFile, elementName)
-	if err != nil {
-		fmt.Println("Error counting elements in XML file:", err)
-		return
-	}
+	// _, err := helpers.CountElementsInXML(pathToFile, elementName)
+	// if err != nil {
+	// 	fmt.Println("Error counting elements in XML file:", err)
+	// 	return
+	// }
 	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
@@ -256,12 +256,13 @@ func Export(db *sqlx.DB, format *string) {
 					item.LIVESTATUS)
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\r"+elementName+": %s rows", s)
+				c <- elementName + " " + s + " rows"
+				//fmt.Printf("\r"+elementName+": %s rows", s)
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
+	//fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
 }

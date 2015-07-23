@@ -32,7 +32,7 @@ func (item XmlObject) String() string {
 	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)
 }
 
-func Export(db *sqlx.DB, format *string) {
+func Export(c chan string, db *sqlx.DB, format *string) {
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string
@@ -46,7 +46,7 @@ func Export(db *sqlx.DB, format *string) {
 	pathToFile := format2 + "/" + fileName
 
 	// Подсчитываем, сколько элементов нужно обработать
-	_, err := helpers.CountElementsInXML(pathToFile, elementName)
+	//_, err := helpers.CountElementsInXML(pathToFile, elementName)
 	// if err != nil {
 	// 	fmt.Println("Error counting elements in XML file:", err)
 	// 	return
@@ -90,7 +90,8 @@ func Export(db *sqlx.DB, format *string) {
 				db.MustExec(query, item.ActStatId, item.Name)
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\r"+elementName+": %s rows\n", s)
+
+				c <- elementName + " " + s + " rows"
 				//fmt.Printf(item.String())
 			}
 		default:
@@ -98,5 +99,5 @@ func Export(db *sqlx.DB, format *string) {
 
 	}
 
-	fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
+	//fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
 }

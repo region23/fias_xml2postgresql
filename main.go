@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 
@@ -28,11 +29,15 @@ func main() {
 	db := initDb()
 	defer db.Close()
 
+	var as_stat chan string = make(chan string)
+	var ao_stat chan string = make(chan string)
+	var cs_stat chan string = make(chan string)
+
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
-		go actual_status.Export(db, format)
-		go address_object.Export(db, format)
-		go center_status.Export(db, format)
+		go actual_status.Export(as_stat, db, format)
+		go address_object.Export(ao_stat, db, format)
+		go center_status.Export(cs_stat, db, format)
 		// current_status.Export(dbmap)
 		// estate_status.Export(dbmap)
 
@@ -41,8 +46,26 @@ func main() {
 		fmt.Println("обработка DBF-файлов")
 	}
 
+	var msg1, msg2, msg3 string
+	for {
+		msg1 = <-as_stat
+		msg2 = <-ao_stat
+		msg3 = <-cs_stat
+		progressPrint(msg1, msg2, msg3)
+	}
+
 	var input string
 	fmt.Scanln(&input)
+}
+
+func progressPrint(msgs ...string) {
+	var v string
+	for _, v = range msgs {
+		v = v + "\n"
+	}
+
+	fmt.Println(v)
+	time.Sleep(time.Second * 1)
 }
 
 func initDb() *sqlx.DB {

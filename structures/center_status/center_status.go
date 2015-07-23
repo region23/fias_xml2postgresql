@@ -27,7 +27,7 @@ const schema = `CREATE TABLE ` + tableName + ` (
     name VARCHAR(100) NOT NULL,
 		PRIMARY KEY (center_st_id));`
 
-func Export(db *sqlx.DB, format *string) {
+func Export(c chan string, db *sqlx.DB, format *string) {
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string
@@ -42,11 +42,11 @@ func Export(db *sqlx.DB, format *string) {
 
 	// Подсчитываем, сколько элементов нужно обработать
 	//fmt.Println("Подсчет строк")
-	_, err := helpers.CountElementsInXML(pathToFile, elementName)
-	if err != nil {
-		fmt.Println("Error counting elements in XML file:", err)
-		return
-	}
+	// _, err := helpers.CountElementsInXML(pathToFile, elementName)
+	// if err != nil {
+	// 	fmt.Println("Error counting elements in XML file:", err)
+	// 	return
+	// }
 	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
@@ -87,12 +87,13 @@ func Export(db *sqlx.DB, format *string) {
 				db.MustExec(query, item.CENTERSTID, item.NAME)
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\r"+elementName+": %s rows\n", s)
+				c <- elementName + " " + s + " rows"
+				//fmt.Printf("\r"+elementName+": %s rows\n", s)
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("\nTotal processed items in "+elementName+": %d \n", total)
+	//fmt.Printf("\nTotal processed items in "+elementName+": %d \n", total)
 }
