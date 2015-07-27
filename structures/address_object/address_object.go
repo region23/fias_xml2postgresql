@@ -2,7 +2,7 @@ package address_object
 
 import (
 	"encoding/xml"
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"time"
@@ -60,34 +60,34 @@ type XmlObject struct {
 const schema = `CREATE TABLE ` + tableName + ` (
     ao_guid UUID NOT NULL,
     formal_name VARCHAR(120) NOT NULL,
-		region_code VARCHAR(2) NOT NULL,
-		auto_code VARCHAR(1) NOT NULL,
-		area_code VARCHAR(3) NOT NULL,
-		city_code VARCHAR(3) NOT NULL,
-		ctar_code VARCHAR(3) NOT NULL,
-		place_code VARCHAR(3) NOT NULL,
-		street_code VARCHAR(4),
-		extr_code VARCHAR(4) NOT NULL,
-		sext_code VARCHAR(3) NOT NULL,
+		region_code INT NOT NULL,
+		auto_code INT NOT NULL,
+		area_code INT NOT NULL,
+		city_code INT NOT NULL,
+		ctar_code INT NOT NULL,
+		place_code INT NOT NULL,
+		street_code INT,
+		extr_code INT NOT NULL,
+		sext_code INT NOT NULL,
 		off_name VARCHAR(120),
 		postal_code VARCHAR(6),
-		ifns_fl VARCHAR(4),
-		terr_ifns_fl VARCHAR(4),
-		ifns_ul VARCHAR(4),
-		terr_ifns_ul VARCHAR(4),
+		ifns_fl INT,
+		terr_ifns_fl INT,
+		ifns_ul INT,
+		terr_ifns_ul INT,
 		okato VARCHAR(11),
 		oktmo VARCHAR(11),
 		update_date TIMESTAMP NOT NULL,
 		short_name VARCHAR(10) NOT NULL,
 		ao_level INT NOT NULL,
 		parent_guid UUID,
-		ao_id UUID PRIMARY KEY NOT NULL,
+		ao_id UUID NOT NULL,
 		prev_id UUID,
 		next_id UUID,
 		code VARCHAR(17),
 		plain_code VARCHAR(15),
-		act_status INT NOT NULL,
-		cent_status INT NOT NULL,
+		act_status BOOL NOT NULL,
+		cent_status BOOL NOT NULL,
 		oper_status INT NOT NULL,
 		curr_status INT NOT NULL,
 		start_date TIMESTAMP NOT NULL,
@@ -97,13 +97,32 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		PRIMARY KEY (ao_id));`
 
 func Export(c chan string, db *sqlx.DB, format *string) {
+	// make sure log.txt exists first
+	// use touch command to create if log.txt does not exist
+	var logFile *os.File
+	var err error
+	if _, err1 := os.Stat("log.txt"); err1 == nil {
+		logFile, err = os.OpenFile("log.txt", os.O_WRONLY, 0666)
+	} else {
+		logFile, err = os.Create("log.txt")
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer logFile.Close()
+
+	// direct all log messages to log.txt
+	log.SetOutput(logFile)
+
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string
 	format2 = *format
 	fileName, err2 := helpers.SearchFile(tableName, format2)
 	if err2 != nil {
-		fmt.Println("Error searching file:", err2)
+		log.Println("Error searching file:", err2)
 		return
 	}
 
@@ -120,7 +139,7 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
+		log.Println("Error opening file:", err)
 		return
 	}
 
@@ -149,7 +168,7 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 				// variable item which is a ActualStatus (se above)
 				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
-					fmt.Println("Error in decode element:", err)
+					log.Println("Error in decode element:", err)
 					return
 				}
 
@@ -160,19 +179,19 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 
 				updDate, err = time.Parse(dateformat, item.UPDATEDATE)
 				if err != nil {
-					fmt.Println("Error parse UPDATEDATE: ", err)
+					log.Println("Error parse UPDATEDATE: ", err)
 					return
 				}
 
 				startDate, err = time.Parse(dateformat, item.STARTDATE)
 				if err != nil {
-					fmt.Println("Error parse STARTDATE: ", err)
+					log.Println("Error parse STARTDATE: ", err)
 					return
 				}
 
 				endDate, err = time.Parse(dateformat, item.ENDDATE)
 				if err != nil {
-					fmt.Println("Error parse ENDDATE: ", err)
+					log.Println("Error parse ENDDATE: ", err)
 					return
 				}
 
@@ -217,7 +236,7 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 						$21, $22, $23, $24, $25, $26, $27, $28, $29, $30,
 						$31, $32, $33, $34, $35, $36)`
 
-				db.MustExec(query,
+				_, err = db.Exec(query,
 					item.AOGUID,
 					item.FORMALNAME,
 					item.REGIONCODE,
@@ -254,6 +273,10 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 					endDate,
 					item.NORMDOC,
 					item.LIVESTATUS)
+
+				if err != nil {
+					log.Fatal(err)
+				}
 
 				s := strconv.Itoa(total)
 				c <- elementName + " " + s + " rows affected"

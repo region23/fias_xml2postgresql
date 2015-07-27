@@ -17,6 +17,7 @@ import (
 	"github.com/pavlik/fias_xml2postgresql/structures/current_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/estate_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/house"
+	"github.com/pavlik/fias_xml2postgresql/structures/house_interval"
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -80,6 +81,7 @@ func main() {
 	var cur_stat chan string = make(chan string, 1000)
 	var est_stat chan string = make(chan string, 1000)
 	var house_stat chan string = make(chan string, 1000)
+	var house_int_stat chan string = make(chan string, 1000)
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
@@ -89,6 +91,7 @@ func main() {
 		go current_status.Export(cur_stat, db, format)
 		go estate_status.Export(est_stat, db, format)
 		go house.Export(house_stat, db, format)
+		go house_interval.Export(house_int_stat, db, format)
 
 	} else if *format == "dbf" {
 		// todo: обработка DBF-файлов
@@ -103,13 +106,13 @@ func main() {
 
 	termbox.SetInputMode(termbox.InputEsc)
 
-	var msg1, msg2, msg3, msg4, msg5, msg6 string
+	var msg1, msg2, msg3, msg4, msg5, msg6, msg7 string
 	timer := time.After(time.Second * 1)
 	go func() {
 		for {
 			select {
 			case <-timer:
-				progressPrint(msg1, msg2, msg3, msg4, msg5, msg6)
+				progressPrint(msg1, msg2, msg3, msg4, msg5, msg6, msg7)
 				timer = time.After(time.Second * 1)
 			default:
 			}
@@ -120,6 +123,7 @@ func main() {
 			case msg4 = <-cur_stat:
 			case msg5 = <-est_stat:
 			case msg6 = <-house_stat:
+			case msg7 = <-house_int_stat:
 			}
 		}
 	}()
