@@ -87,7 +87,7 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 				db.MustExec(query, item.CENTERSTID, item.NAME)
 
 				s := strconv.Itoa(total)
-				c <- elementName + " " + s + " rows"
+				c <- elementName + " " + s + " rows affected"
 				//fmt.Printf("\r"+elementName+": %s rows\n", s)
 			}
 		default:

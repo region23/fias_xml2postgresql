@@ -91,7 +91,7 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 
 				s := strconv.Itoa(total)
 
-				c <- elementName + " " + s + " rows"
+				c <- elementName + " " + s + " rows affected"
 				//fmt.Printf(item.String())
 			}
 		default:

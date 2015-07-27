@@ -7,8 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-gorp/gorp"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
 const dateformat = "2006-01-02"
@@ -16,18 +17,18 @@ const dateformat = "2006-01-02"
 // Сведения по номерам домов улиц городов и населенных пунктов, номера земельных участков и т.п
 type XmlObject struct {
 	XMLName    xml.Name `xml:"House"`
-	POSTALCODE string   `xml:"POSTALCODE,attr"`
-	IFNSFL     string   `xml:"IFNSFL,attr"`
-	TERRIFNSFL string   `xml:"TERRIFNSFL,attr"`
-	IFNSUL     string   `xml:"IFNSUL,attr"`
-	TERRIFNSUL string   `xml:"TERRIFNSUL,attr"`
-	OKATO      string   `xml:"OKATO,attr"`
-	OKTMO      string   `xml:"OKTMO,attr"`
+	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
+	IFNSFL     int      `xml:"IFNSFL,attr,omitempty"`
+	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty"`
+	IFNSUL     int      `xml:"IFNSUL,attr,omitempty"`
+	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty"`
+	OKATO      *string  `xml:"OKATO,attr,omitempty"`
+	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
 	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
-	HOUSENUM   string   `xml:"HOUSENUM,attr"`
+	HOUSENUM   *string  `xml:"HOUSENUM,attr,omitempty"`
 	ESTSTATUS  int      `xml:"ESTSTATUS,attr"`
-	BUILDNUM   string   `xml:"BUILDNUM,attr"`
-	STRUCNUM   string   `xml:"STRUCNUM,attr"`
+	BUILDNUM   *string  `xml:"BUILDNUM,attr,omitempty"`
+	STRUCNUM   *string  `xml:"STRUCNUM,attr,omitempty"`
 	STRSTATUS  int      `xml:"STRSTATUS,attr"`
 	HOUSEID    string   `xml:"HOUSEID,attr"`
 	HOUSEGUID  string   `xml:"HOUSEGUID,attr"`
@@ -35,123 +36,62 @@ type XmlObject struct {
 	STARTDATE  string   `xml:"STARTDATE,attr"`
 	ENDDATE    string   `xml:"ENDDATE,attr"`
 	STATSTATUS int      `xml:"STATSTATUS,attr"`
-	NORMDOC    string   `xml:"NORMDOC,attr"`
-	COUNTER    string   `xml:"COUNTER,attr"`
+	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty"`
+	COUNTER    int      `xml:"COUNTER,attr"`
 }
 
-type DBObject struct {
-	POSTALCODE string    `db:"postal_code"`
-	IFNSFL     string    `db:"ifnsfl"`
-	REGIONCODE string    `db:"region_code"`
-	AUTOCODE   string    `db:"auto_code"`
-	AREACODE   string    `db:"area_code"`
-	CITYCODE   string    `db:"city_code"`
-	CTARCODE   string    `db:"ctar_code"`
-	PLACECODE  string    `db:"place_code"`
-	STREETCODE string    `db:"street_code"`
-	EXTRCODE   string    `db:"extr_code"`
-	SEXTCODE   string    `db:"sext_code"`
-	OFFNAME    string    `db:"off_name"`
-	POSTALCODE string    `db:"postal_code"`
-	IFNSFL     string    `db:"ifnsfl"`
-	TERRIFNSFL string    `db:"terrifnsfl"`
-	IFNSUL     string    `db:"ifnsul"`
-	TERRIFNSUL string    `db:"terrifnsul"`
-	OKATO      string    `db:"okato"`
-	OKTMO      string    `db:"oktmo"`
-	UPDATEDATE time.Time `db:"update_date"`
-	SHORTNAME  string    `db:"short_name"`
-	AOLEVEL    int       `db:"ao_level"`
-	PARENTGUID string    `db:"parent_guid"`
-	AOID       string    `db:"ao_id, primarykey"`
-	PREVID     string    `db:"prev_id"`
-	NEXTID     string    `db:"next_id"`
-	CODE       string    `db:"code"`
-	PLAINCODE  string    `db:"plain_code"`
-	ACTSTATUS  int       `db:"act_status"`
-	CENTSTATUS int       `db:"cent_status"`
-	OPERSTATUS int       `db:"oper_status"`
-	CURRSTATUS int       `db:"curr_status"`
-	STARTDATE  time.Time `db:"start_date"`
-	ENDDATE    time.Time `db:"end_date"`
-	NORMDOC    string    `db:"norm_doc"`
-	LIVESTATUS bool      `db:"live_status"`
-}
+// схема таблицы в БД
 
-func xml2db(xml XmlObject) (*DBObject, error) {
-	obj := &DBObject{
-		AOGUID:     xml.AOGUID,
-		FORMALNAME: xml.FORMALNAME,
-		REGIONCODE: xml.REGIONCODE,
-		AUTOCODE:   xml.AUTOCODE,
-		AREACODE:   xml.AREACODE,
-		CITYCODE:   xml.CITYCODE,
-		CTARCODE:   xml.CTARCODE,
-		PLACECODE:  xml.PLACECODE,
-		STREETCODE: xml.STREETCODE,
-		EXTRCODE:   xml.EXTRCODE,
-		SEXTCODE:   xml.SEXTCODE,
-		OFFNAME:    xml.OFFNAME,
-		POSTALCODE: xml.POSTALCODE,
-		IFNSFL:     xml.IFNSFL,
-		TERRIFNSFL: xml.TERRIFNSFL,
-		IFNSUL:     xml.IFNSUL,
-		TERRIFNSUL: xml.TERRIFNSUL,
-		OKATO:      xml.OKATO,
-		OKTMO:      xml.OKTMO,
-		SHORTNAME:  xml.SHORTNAME,
-		AOLEVEL:    xml.AOLEVEL,
-		PARENTGUID: xml.PARENTGUID,
-		AOID:       xml.AOID,
-		PREVID:     xml.PREVID,
-		NEXTID:     xml.NEXTID,
-		CODE:       xml.CODE,
-		PLAINCODE:  xml.PLAINCODE,
-		ACTSTATUS:  xml.ACTSTATUS,
-		CENTSTATUS: xml.CENTSTATUS,
-		OPERSTATUS: xml.OPERSTATUS,
-		CURRSTATUS: xml.CURRSTATUS,
-		NORMDOC:    xml.NORMDOC,
-		LIVESTATUS: xml.LIVESTATUS}
+const tableName = "as_house_"
+const elementName = "House"
 
-	var err error
+const schema = `CREATE TABLE ` + tableName + ` (
+    house_id UUID NOT NULL,
+    postal_code VARCHAR(6),
+		ifns_fl INT,
+		terr_ifns_fl INT,
+		ifns_ul INT,
+		terr_ifns_ul INT,
+		okato VARCHAR(11),
+		oktmo VARCHAR(11),
+		update_date TIMESTAMP NOT NULL,
+		house_num VARCHAR(20),
+		est_status INT NOT NULL,
+		build_num VARCHAR(20),
+		struc_num VARCHAR(20),
+		str_status INT,
+		house_guid UUID NOT NULL,
+		ao_guid UUID NOT NULL,
+		start_date TIMESTAMP NOT NULL,
+		end_date TIMESTAMP NOT NULL,
+		stat_status INT NOT NULL,
+		norm_doc UUID,
+		counter INT NOT NULL,
+		PRIMARY KEY (house_id));`
 
-	obj.UPDATEDATE, err = time.Parse(dateformat, xml.UPDATEDATE)
-	if err != nil {
-		fmt.Println("Error parse UPDATEDATE: ", err)
-		return nil, err
-	}
+func Export(c chan string, db *sqlx.DB, format *string) {
+	helpers.DropAndCreateTable(schema, tableName, db)
 
-	obj.STARTDATE, err = time.Parse(dateformat, xml.STARTDATE)
-	if err != nil {
-		fmt.Println("Error parse STARTDATE: ", err)
-		return nil, err
-	}
-
-	obj.ENDDATE, err = time.Parse(dateformat, xml.ENDDATE)
-	if err != nil {
-		fmt.Println("Error parse ENDDATE: ", err)
-		return nil, err
-	}
-
-	return obj, nil
-}
-
-func Export(dbmap *gorp.DbMap) {
-	// Создаем таблицу
-	dbmap.AddTableWithName(DBObject{}, "addrobj")
-	err := dbmap.DropTableIfExists(DBObject{})
-	if err != nil {
-		fmt.Println("Error on drop table:", err)
-		return
-	}
-	err = dbmap.CreateTablesIfNotExists()
-	if err != nil {
-		fmt.Println("Error on creating table:", err)
+	var format2 string
+	format2 = *format
+	fileName, err2 := helpers.SearchFile(tableName, format2)
+	if err2 != nil {
+		fmt.Println("Error searching file:", err2)
 		return
 	}
 
-	xmlFile, err := os.Open("xml/AS_ADDROBJ_20150705_e3a7c988-3be1-456a-a329-ba78c181bb1a.XML")
+	pathToFile := format2 + "/" + fileName
+
+	// Подсчитываем, сколько элементов нужно обработать
+	//fmt.Println("Подсчет строк")
+	// _, err := helpers.CountElementsInXML(pathToFile, elementName)
+	// if err != nil {
+	// 	fmt.Println("Error counting elements in XML file:", err)
+	// 	return
+	// }
+	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
+
+	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -174,31 +114,96 @@ func Export(dbmap *gorp.DbMap) {
 			// If we just read a StartElement token
 			inElement = se.Name.Local
 
-			if inElement == "Object" {
+			if inElement == elementName {
 				total++
 				var item XmlObject
 
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
-				decoder.DecodeElement(&item, &se)
-				obj, err := xml2db(item)
+				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
-					fmt.Println("Error on mapping XML to DB object: ", err)
-					return
-				}
-				err = dbmap.Insert(obj)
-				if err != nil {
-					fmt.Println("Error on creating table:", err)
+					fmt.Println("Error in decode element:", err)
 					return
 				}
 
+				//fmt.Println(item, "\n\n")
+
+				var err error
+				var updDate, startDate, endDate time.Time
+
+				updDate, err = time.Parse(dateformat, item.UPDATEDATE)
+				if err != nil {
+					fmt.Println("Error parse UPDATEDATE: ", err)
+					return
+				}
+
+				startDate, err = time.Parse(dateformat, item.STARTDATE)
+				if err != nil {
+					fmt.Println("Error parse STARTDATE: ", err)
+					return
+				}
+
+				endDate, err = time.Parse(dateformat, item.ENDDATE)
+				if err != nil {
+					fmt.Println("Error parse ENDDATE: ", err)
+					return
+				}
+
+				query := `INSERT INTO ` + tableName + ` (house_guid,
+					postal_code,
+					ifns_fl,
+					terr_ifns_fl,
+					ifns_ul,
+					terr_ifns_ul,
+					okato,
+					oktmo,
+					update_date,
+					house_num,
+					est_status,
+					build_num,
+					struc_num,
+					str_status,
+					house_id,
+					ao_guid,
+					start_date,
+					end_date,
+					stat_status,
+					norm_doc,
+					counter
+					) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+						$11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+						$21)`
+
+				db.MustExec(query,
+					item.HOUSEGUID,
+					item.POSTALCODE,
+					item.IFNSFL,
+					item.TERRIFNSFL,
+					item.IFNSUL,
+					item.TERRIFNSUL,
+					item.OKATO,
+					item.OKTMO,
+					updDate,
+					item.HOUSENUM,
+					item.ESTSTATUS,
+					item.BUILDNUM,
+					item.STRUCNUM,
+					item.STRSTATUS,
+					item.HOUSEID,
+					item.AOGUID,
+					startDate,
+					endDate,
+					item.STATSTATUS,
+					item.NORMDOC,
+					item.COUNTER)
+
 				s := strconv.Itoa(total)
-				fmt.Printf("\rObject: %s rows", s)
+				c <- elementName + " " + s + " rows affected"
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("Total processed items in AddressObjects: %d \n", total)
+	//fmt.Printf("Total processed items in AddressObjects: %d \n", total)
 }

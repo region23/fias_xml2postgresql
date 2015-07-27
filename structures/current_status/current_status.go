@@ -6,8 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/go-gorp/gorp"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
 const dateformat = "2006-01-02"
@@ -19,34 +20,38 @@ type XmlObject struct {
 	NAME       string   `xml:"NAME,attr"`
 }
 
-type DBObject struct {
-	CURENTSTID int    `db:"currentst_id, primarykey"`
-	NAME       string `db:"name"`
-}
+// схема таблицы в БД
 
-func xml2db(xml XmlObject) *DBObject {
-	obj := &DBObject{
-		CURENTSTID: xml.CURENTSTID,
-		NAME:       xml.NAME}
+const tableName = "curentst"
+const elementName = "CurrentStatus"
 
-	return obj
-}
+const schema = `CREATE TABLE ` + tableName + ` (
+    curent_st_id INT UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+		PRIMARY KEY (curent_st_id));`
 
-func Export(dbmap *gorp.DbMap) {
-	// Создаем таблицу
-	dbmap.AddTableWithName(DBObject{}, "curentst")
-	err := dbmap.DropTableIfExists(DBObject{})
-	if err != nil {
-		fmt.Println("Error on drop table:", err)
-		return
-	}
-	err = dbmap.CreateTablesIfNotExists()
-	if err != nil {
-		fmt.Println("Error on creating table:", err)
+func Export(c chan string, db *sqlx.DB, format *string) {
+	helpers.DropAndCreateTable(schema, tableName, db)
+
+	var format2 string
+	format2 = *format
+	fileName, err2 := helpers.SearchFile(tableName, format2)
+	if err2 != nil {
+		fmt.Println("Error searching file:", err2)
 		return
 	}
 
-	xmlFile, err := os.Open("xml/AS_CURENTST_20150705_a4c01a56-bea6-4cf3-84f8-10d201df820d.XML")
+	pathToFile := format2 + "/" + fileName
+
+	// Подсчитываем, сколько элементов нужно обработать
+	//_, err := helpers.CountElementsInXML(pathToFile, elementName)
+	// if err != nil {
+	// 	fmt.Println("Error counting elements in XML file:", err)
+	// 	return
+	// }
+	// fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
+
+	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -69,27 +74,29 @@ func Export(dbmap *gorp.DbMap) {
 			// If we just read a StartElement token
 			inElement = se.Name.Local
 
-			if inElement == "CurrentStatus" {
+			if inElement == elementName {
 				total++
 				var item XmlObject
 
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
-				decoder.DecodeElement(&item, &se)
-				obj := xml2db(item)
-				err := dbmap.Insert(obj)
+				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
-					fmt.Println("Error on creating table:", err)
+					fmt.Println("Error in decode element:", err)
 					return
 				}
+				query := "INSERT INTO " + tableName + " (curent_st_id, name) VALUES ($1, $2)"
+				db.MustExec(query, item.CURENTSTID, item.NAME)
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\rCurrentStatus: %s rows", s)
+
+				c <- elementName + " " + s + " rows affected"
+
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("Total processed items in CurrentStatus: %d \n", total)
+	//fmt.Printf("Total processed items in CurrentStatus: %d \n", total)
 }

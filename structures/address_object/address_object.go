@@ -21,21 +21,21 @@ type XmlObject struct {
 	XMLName    xml.Name `xml:"Object"`
 	AOGUID     string   `xml:"AOGUID,attr"`
 	FORMALNAME string   `xml:"FORMALNAME,attr"`
-	REGIONCODE string   `xml:"REGIONCODE,attr"`
-	AUTOCODE   string   `xml:"AUTOCODE,attr"`
-	AREACODE   string   `xml:"AREACODE,attr"`
-	CITYCODE   string   `xml:"CITYCODE,attr"`
-	CTARCODE   string   `xml:"CTARCODE,attr"`
-	PLACECODE  string   `xml:"PLACECODE,attr"`
-	STREETCODE *string  `xml:"STREETCODE,attr,omitempty"`
-	EXTRCODE   string   `xml:"EXTRCODE,attr"`
-	SEXTCODE   string   `xml:"SEXTCODE,attr"`
+	REGIONCODE int      `xml:"REGIONCODE,attr"`
+	AUTOCODE   int      `xml:"AUTOCODE,attr"`
+	AREACODE   int      `xml:"AREACODE,attr"`
+	CITYCODE   int      `xml:"CITYCODE,attr"`
+	CTARCODE   int      `xml:"CTARCODE,attr"`
+	PLACECODE  int      `xml:"PLACECODE,attr"`
+	STREETCODE int      `xml:"STREETCODE,attr,omitempty"`
+	EXTRCODE   int      `xml:"EXTRCODE,attr"`
+	SEXTCODE   int      `xml:"SEXTCODE,attr"`
 	OFFNAME    *string  `xml:"OFFNAME,attr,omitempty"`
 	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
-	IFNSFL     *string  `xml:"IFNSFL,attr,omitempty"`
-	TERRIFNSFL *string  `xml:"TERRIFNSFL,attr,omitempty"`
-	IFNSUL     *string  `xml:"IFNSUL,attr,omitempty"`
-	TERRIFNSUL *string  `xml:"TERRIFNSUL,attr,omitempty"`
+	IFNSFL     int      `xml:"IFNSFL,attr,omitempty"`
+	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty"`
+	IFNSUL     int      `xml:"IFNSUL,attr,omitempty"`
+	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty"`
 	OKATO      *string  `xml:"OKATO,attr,omitempty"`
 	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
 	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
@@ -47,8 +47,8 @@ type XmlObject struct {
 	NEXTID     *string  `xml:"NEXTID,attr,omitempty"`
 	CODE       *string  `xml:"CODE,attr,omitempty"`
 	PLAINCODE  *string  `xml:"PLAINCODE,attr,omitempty"`
-	ACTSTATUS  int      `xml:"ACTSTATUS,attr"`
-	CENTSTATUS int      `xml:"CENTSTATUS,attr"`
+	ACTSTATUS  bool     `xml:"ACTSTATUS,attr"`
+	CENTSTATUS bool     `xml:"CENTSTATUS,attr"`
 	OPERSTATUS int      `xml:"OPERSTATUS,attr"`
 	CURRSTATUS int      `xml:"CURRSTATUS,attr"`
 	STARTDATE  string   `xml:"STARTDATE,attr"`
@@ -81,7 +81,7 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		short_name VARCHAR(10) NOT NULL,
 		ao_level INT NOT NULL,
 		parent_guid UUID,
-		ao_id UUID NOT NULL,
+		ao_id UUID PRIMARY KEY NOT NULL,
 		prev_id UUID,
 		next_id UUID,
 		code VARCHAR(17),
@@ -256,7 +256,7 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 					item.LIVESTATUS)
 
 				s := strconv.Itoa(total)
-				c <- elementName + " " + s + " rows"
+				c <- elementName + " " + s + " rows affected"
 				//fmt.Printf("\r"+elementName+": %s rows", s)
 			}
 		default:

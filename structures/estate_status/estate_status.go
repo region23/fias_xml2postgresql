@@ -6,8 +6,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/go-gorp/gorp"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
 const dateformat = "2006-01-02"
@@ -20,36 +21,39 @@ type XmlObject struct {
 	SHORTNAME string   `xml:"SHORTNAME,attr"`
 }
 
-type DBObject struct {
-	ESTSTATID int    `db:"eststat_id, primarykey"`
-	NAME      string `db:"name"`
-	SHORTNAME string `db:"short_name,attr"`
-}
+// схема таблицы в БД
 
-func xml2db(xml XmlObject) *DBObject {
-	obj := &DBObject{
-		ESTSTATID: xml.ESTSTATID,
-		NAME:      xml.NAME,
-		SHORTNAME: xml.SHORTNAME}
+const tableName = "eststat"
+const elementName = "EstateStatus"
 
-	return obj
-}
+const schema = `CREATE TABLE ` + tableName + ` (
+    est_stat_id INT UNIQUE NOT NULL,
+    name VARCHAR(20) NOT NULL,
+		short_name VARCHAR(20),
+		PRIMARY KEY (est_stat_id));`
 
-func Export(dbmap *gorp.DbMap) {
-	// Создаем таблицу
-	dbmap.AddTableWithName(DBObject{}, "curentst")
-	err := dbmap.DropTableIfExists(DBObject{})
-	if err != nil {
-		fmt.Println("Error on drop table:", err)
-		return
-	}
-	err = dbmap.CreateTablesIfNotExists()
-	if err != nil {
-		fmt.Println("Error on creating table:", err)
+func Export(c chan string, db *sqlx.DB, format *string) {
+	helpers.DropAndCreateTable(schema, tableName, db)
+
+	var format2 string
+	format2 = *format
+	fileName, err2 := helpers.SearchFile(tableName, format2)
+	if err2 != nil {
+		fmt.Println("Error searching file:", err2)
 		return
 	}
 
-	xmlFile, err := os.Open("xml/AS_CURENTST_20150705_a4c01a56-bea6-4cf3-84f8-10d201df820d.XML")
+	pathToFile := format2 + "/" + fileName
+
+	// Подсчитываем, сколько элементов нужно обработать
+	//_, err := helpers.CountElementsInXML(pathToFile, elementName)
+	// if err != nil {
+	// 	fmt.Println("Error counting elements in XML file:", err)
+	// 	return
+	// }
+	// fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
+
+	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)
 		return
@@ -72,27 +76,28 @@ func Export(dbmap *gorp.DbMap) {
 			// If we just read a StartElement token
 			inElement = se.Name.Local
 
-			if inElement == "CurrentStatus" {
+			if inElement == elementName {
 				total++
 				var item XmlObject
 
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
-				decoder.DecodeElement(&item, &se)
-				obj := xml2db(item)
-				err := dbmap.Insert(obj)
+				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
-					fmt.Println("Error on creating table:", err)
+					fmt.Println("Error in decode element:", err)
 					return
 				}
+				query := "INSERT INTO " + tableName + " (est_stat_id, name, short_name) VALUES ($1, $2, $3)"
+				db.MustExec(query, item.ESTSTATID, item.NAME, item.SHORTNAME)
 
 				s := strconv.Itoa(total)
-				fmt.Printf("\rCurrentStatus: %s rows", s)
+
+				c <- elementName + " " + s + " rows affected"
 			}
 		default:
 		}
 
 	}
 
-	fmt.Printf("Total processed items in CurrentStatus: %d \n", total)
+	//fmt.Printf("Total processed items in CurrentStatus: %d \n", total)
 }
