@@ -1,8 +1,8 @@
-package house
+package landmark
 
 import (
 	"encoding/xml"
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -13,10 +13,13 @@ import (
 )
 
 const dateformat = "2006-01-02"
+const tableName = "landmark"
+const elementName = "Landmark"
 
-// Сведения по номерам домов улиц городов и населенных пунктов, номера земельных участков и т.п
+// Описание мест расположения  имущественных объектов
 type XmlObject struct {
-	XMLName    xml.Name `xml:"House"`
+	XMLName    xml.Name `xml:"Landmark"`
+	LOCATION   string   `xml:"LOCATION,attr"`
 	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
 	IFNSFL     int      `xml:"IFNSFL,attr,omitempty"`
 	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty"`
@@ -25,60 +28,61 @@ type XmlObject struct {
 	OKATO      *string  `xml:"OKATO,attr,omitempty"`
 	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
 	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
-	HOUSENUM   *string  `xml:"HOUSENUM,attr,omitempty"`
-	ESTSTATUS  int      `xml:"ESTSTATUS,attr"`
-	BUILDNUM   *string  `xml:"BUILDNUM,attr,omitempty"`
-	STRUCNUM   *string  `xml:"STRUCNUM,attr,omitempty"`
-	STRSTATUS  int      `xml:"STRSTATUS,attr"`
-	HOUSEID    string   `xml:"HOUSEID,attr"`
-	HOUSEGUID  string   `xml:"HOUSEGUID,attr"`
+	LANDID     string   `xml:"LANDID,attr"`
+	LANDGUID   string   `xml:"LANDGUID,attr"`
 	AOGUID     string   `xml:"AOGUID,attr"`
 	STARTDATE  string   `xml:"STARTDATE,attr"`
 	ENDDATE    string   `xml:"ENDDATE,attr"`
-	STATSTATUS int      `xml:"STATSTATUS,attr"`
 	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty"`
-	COUNTER    int      `xml:"COUNTER,attr"`
 }
 
-// схема таблицы в БД
-
-const tableName = "as_house_"
-const elementName = "House"
-
 const schema = `CREATE TABLE ` + tableName + ` (
-    house_id UUID NOT NULL,
+    location VARCHAR(500) NOT NULL,
     postal_code VARCHAR(6),
-		ifns_fl INT,
-		terr_ifns_fl INT,
-		ifns_ul INT,
-		terr_ifns_ul INT,
-		okato VARCHAR(11),
-		oktmo VARCHAR(11),
-		update_date TIMESTAMP NOT NULL,
-		house_num VARCHAR(20),
-		est_status INT NOT NULL,
-		build_num VARCHAR(20),
-		struc_num VARCHAR(20),
-		str_status INT,
-		house_guid UUID NOT NULL,
-		ao_guid UUID NOT NULL,
-		start_date TIMESTAMP NOT NULL,
+    ifns_fl INT,
+    terr_ifns_fl INT,
+    ifns_ul INT,
+    terr_ifns_ul INT,
+    okato VARCHAR(11),
+    oktmo VARCHAR(11),
+    update_date TIMESTAMP NOT NULL,
+    land_id UUID NOT NULL,
+    land_guid UUID NOT NULL,
+    ao_guid UUID NOT NULL,
+    start_date TIMESTAMP NOT NULL,
 		end_date TIMESTAMP NOT NULL,
-		stat_status INT NOT NULL,
 		norm_doc UUID,
-		counter INT NOT NULL,
-		PRIMARY KEY (house_id));`
+		PRIMARY KEY (land_id));`
 
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	w.Add(1)
 	defer w.Done()
+	// make sure log.txt exists first
+	// use touch command to create if log.txt does not exist
+	var logFile *os.File
+	var err error
+	if _, err1 := os.Stat("log.txt"); err1 == nil {
+		logFile, err = os.OpenFile("log.txt", os.O_WRONLY, 0666)
+	} else {
+		logFile, err = os.Create("log.txt")
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	defer logFile.Close()
+
+	// direct all log messages to log.txt
+	log.SetOutput(logFile)
+
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string
 	format2 = *format
 	fileName, err2 := helpers.SearchFile(tableName, format2)
 	if err2 != nil {
-		fmt.Println("Error searching file:", err2)
+		log.Println("Error searching file:", err2)
 		return
 	}
 
@@ -95,7 +99,7 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
+		log.Println("Error opening file:", err)
 		return
 	}
 
@@ -124,11 +128,15 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 				// variable item which is a ActualStatus (se above)
 				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
-					fmt.Println("Error in decode element:", err)
+					log.Println("Error in decode element:", err)
 					return
 				}
 
-				query := `INSERT INTO ` + tableName + ` (house_guid,
+				//fmt.Println(item, "\n\n")
+
+				var err error
+
+				query := `INSERT INTO ` + tableName + ` (location,
 					postal_code,
 					ifns_fl,
 					terr_ifns_fl,
@@ -137,24 +145,17 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					okato,
 					oktmo,
 					update_date,
-					house_num,
-					est_status,
-					build_num,
-					struc_num,
-					str_status,
-					house_id,
-					ao_guid,
-					start_date,
+          land_id,
+          land_guid,
+          ao_guid,
+          start_date,
 					end_date,
-					stat_status,
-					norm_doc,
-					counter
+					norm_doc
 					) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-						$11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-						$21)`
+						$11, $12, $13, $14, $15)`
 
-				db.MustExec(query,
-					item.HOUSEGUID,
+				_, err = db.Exec(query,
+					item.LOCATION,
 					item.POSTALCODE,
 					item.IFNSFL,
 					item.TERRIFNSFL,
@@ -163,26 +164,25 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					item.OKATO,
 					item.OKTMO,
 					item.UPDATEDATE,
-					item.HOUSENUM,
-					item.ESTSTATUS,
-					item.BUILDNUM,
-					item.STRUCNUM,
-					item.STRSTATUS,
-					item.HOUSEID,
+					item.LANDID,
+					item.LANDGUID,
 					item.AOGUID,
 					item.STARTDATE,
 					item.ENDDATE,
-					item.STATSTATUS,
-					item.NORMDOC,
-					item.COUNTER)
+					item.NORMDOC)
+
+				if err != nil {
+					log.Fatal(err)
+				}
 
 				s := strconv.Itoa(total)
 				c <- elementName + " " + s + " rows affected"
+				//fmt.Printf("\r"+elementName+": %s rows", s)
 			}
 		default:
 		}
 
 	}
 
-	//fmt.Printf("Total processed items in AddressObjects: %d \n", total)
+	//fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
 }

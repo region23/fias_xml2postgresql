@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -30,7 +31,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
     name VARCHAR(100) NOT NULL,
 		PRIMARY KEY (curent_st_id));`
 
-func Export(c chan string, db *sqlx.DB, format *string) {
+func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
+	w.Add(1)
+	defer w.Done()
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string

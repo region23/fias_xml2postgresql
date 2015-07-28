@@ -1,4 +1,4 @@
-package center_status
+package normative_document_type
 
 import (
 	"encoding/xml"
@@ -13,20 +13,20 @@ import (
 )
 
 const dateformat = "2006-01-02"
-const tableName = "centerst"
-const elementName = "CenterStatus"
+const tableName = "as_ndoctype"
+const elementName = "NormativeDocumentType"
 
 // Статус центра
 type XmlObject struct {
-	XMLName    xml.Name `xml:"CenterStatus"`
-	CENTERSTID int      `xml:"CENTERSTID,attr"`
-	NAME       string   `xml:"NAME,attr"`
+	XMLName  xml.Name `xml:"NormativeDocumentType"`
+	NDTYPEID int      `xml:"NDTYPEID,attr"`
+	NAME     string   `xml:"NAME,attr"`
 }
 
 const schema = `CREATE TABLE ` + tableName + ` (
-    center_st_id INT UNIQUE NOT NULL,
+    nd_type_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
-		PRIMARY KEY (center_st_id));`
+		PRIMARY KEY (nd_type_id));`
 
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	w.Add(1)
@@ -86,8 +86,8 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					fmt.Println("Error in decode element:", err)
 					return
 				}
-				query := "INSERT INTO " + tableName + " (center_st_id, name) VALUES ($1, $2)"
-				db.MustExec(query, item.CENTERSTID, item.NAME)
+				query := "INSERT INTO " + tableName + " (nd_type_id, name) VALUES ($1, $2)"
+				db.MustExec(query, item.NDTYPEID, item.NAME)
 
 				s := strconv.Itoa(total)
 				c <- elementName + " " + s + " rows affected"

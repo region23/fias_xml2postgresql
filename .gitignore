@@ -29,3 +29,5 @@ _testmain.go
 *.xml
 *.DBF
 *.DBT
+
+log.txt

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -32,7 +33,10 @@ func (item XmlObject) String() string {
 	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)
 }
 
-func Export(c chan string, db *sqlx.DB, format *string) {
+func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
+	w.Add(1)
+	defer w.Done()
+
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string

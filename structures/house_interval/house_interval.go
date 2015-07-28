@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"time"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -63,7 +63,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		counter INT NOT NULL,
 		PRIMARY KEY (house_int_id));`
 
-func Export(c chan string, db *sqlx.DB, format *string) {
+func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
+	w.Add(1)
+	defer w.Done()
 	helpers.DropAndCreateTable(schema, tableName, db)
 
 	var format2 string
@@ -123,25 +125,6 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 				//fmt.Println(item, "\n\n")
 
 				var err error
-				var updDate, startDate, endDate time.Time
-
-				updDate, err = time.Parse(dateformat, item.UPDATEDATE)
-				if err != nil {
-					fmt.Println("Error parse UPDATEDATE: ", err)
-					return
-				}
-
-				startDate, err = time.Parse(dateformat, item.STARTDATE)
-				if err != nil {
-					fmt.Println("Error parse STARTDATE: ", err)
-					return
-				}
-
-				endDate, err = time.Parse(dateformat, item.ENDDATE)
-				if err != nil {
-					fmt.Println("Error parse ENDDATE: ", err)
-					return
-				}
 
 				query := `INSERT INTO ` + tableName + ` (postal_code,
 					ifns_fl,
@@ -172,14 +155,14 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 					item.TERRIFNSUL,
 					item.OKATO,
 					item.OKTMO,
-					updDate,
+					item.UPDATEDATE,
 					item.INTSTART,
 					item.INTEND,
 					item.HOUSEINTID,
 					item.INTGUID,
 					item.AOGUID,
-					startDate,
-					endDate,
+					item.STARTDATE,
+					item.ENDDATE,
 					item.INTSTATUS,
 					item.NORMDOC,
 					item.COUNTER)

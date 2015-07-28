@@ -1,4 +1,4 @@
-package center_status
+package interval_status
 
 import (
 	"encoding/xml"
@@ -13,20 +13,20 @@ import (
 )
 
 const dateformat = "2006-01-02"
-const tableName = "centerst"
-const elementName = "CenterStatus"
+const tableName = "as_intvstat"
+const elementName = "IntervalStatus"
 
-// Статус центра
+// Статус интервала домов
 type XmlObject struct {
-	XMLName    xml.Name `xml:"CenterStatus"`
-	CENTERSTID int      `xml:"CENTERSTID,attr"`
+	XMLName    xml.Name `xml:"IntervalStatus"`
+	INTVSTATID int      `xml:"INTVSTATID,attr"`
 	NAME       string   `xml:"NAME,attr"`
 }
 
 const schema = `CREATE TABLE ` + tableName + ` (
-    center_st_id INT UNIQUE NOT NULL,
+    intv_stat_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
-		PRIMARY KEY (center_st_id));`
+		PRIMARY KEY (intv_stat_id));`
 
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	w.Add(1)
@@ -86,8 +86,8 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					fmt.Println("Error in decode element:", err)
 					return
 				}
-				query := "INSERT INTO " + tableName + " (center_st_id, name) VALUES ($1, $2)"
-				db.MustExec(query, item.CENTERSTID, item.NAME)
+				query := "INSERT INTO " + tableName + " (intv_stat_id, name) VALUES ($1, $2)"
+				db.MustExec(query, item.INTVSTATID, item.NAME)
 
 				s := strconv.Itoa(total)
 				c <- elementName + " " + s + " rows affected"

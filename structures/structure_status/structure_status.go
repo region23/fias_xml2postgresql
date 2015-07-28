@@ -1,4 +1,4 @@
-package center_status
+package structure_status
 
 import (
 	"encoding/xml"
@@ -13,20 +13,25 @@ import (
 )
 
 const dateformat = "2006-01-02"
-const tableName = "centerst"
-const elementName = "CenterStatus"
 
-// Статус центра
+// Признак строения
 type XmlObject struct {
-	XMLName    xml.Name `xml:"CenterStatus"`
-	CENTERSTID int      `xml:"CENTERSTID,attr"`
-	NAME       string   `xml:"NAME,attr"`
+	XMLName   xml.Name `xml:"StructureStatus"`
+	STRSTATID int      `xml:"STRSTATID,attr"`
+	NAME      string   `xml:"NAME,attr"`
+	SHORTNAME string   `xml:"SHORTNAME,attr"`
 }
 
+// схема таблицы в БД
+
+const tableName = "as_strstat"
+const elementName = "StructureStatus"
+
 const schema = `CREATE TABLE ` + tableName + ` (
-    center_st_id INT UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-		PRIMARY KEY (center_st_id));`
+    str_stat_id INT UNIQUE NOT NULL,
+    name VARCHAR(20) NOT NULL,
+    short_name VARCHAR(20),
+		PRIMARY KEY (str_stat_id));`
 
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	w.Add(1)
@@ -44,13 +49,12 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	pathToFile := format2 + "/" + fileName
 
 	// Подсчитываем, сколько элементов нужно обработать
-	//fmt.Println("Подсчет строк")
-	// _, err := helpers.CountElementsInXML(pathToFile, elementName)
+	//_, err := helpers.CountElementsInXML(pathToFile, elementName)
 	// if err != nil {
 	// 	fmt.Println("Error counting elements in XML file:", err)
 	// 	return
 	// }
-	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
+	// fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -86,17 +90,25 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					fmt.Println("Error in decode element:", err)
 					return
 				}
-				query := "INSERT INTO " + tableName + " (center_st_id, name) VALUES ($1, $2)"
-				db.MustExec(query, item.CENTERSTID, item.NAME)
+				query := `INSERT INTO ` + tableName + ` (
+          str_stat_id,
+          name,
+          short_name)
+          VALUES (
+            $1, $2, $3)`
+
+				db.MustExec(query,
+					item.STRSTATID,
+					item.NAME,
+					item.SHORTNAME)
 
 				s := strconv.Itoa(total)
+
 				c <- elementName + " " + s + " rows affected"
-				//fmt.Printf("\r"+elementName+": %s rows\n", s)
+
 			}
 		default:
 		}
 
 	}
-
-	//fmt.Printf("\nTotal processed items in "+elementName+": %d \n", total)
 }

@@ -1,4 +1,4 @@
-package center_status
+package operation_status
 
 import (
 	"encoding/xml"
@@ -13,20 +13,23 @@ import (
 )
 
 const dateformat = "2006-01-02"
-const tableName = "centerst"
-const elementName = "CenterStatus"
 
-// Статус центра
+// Статус действия
 type XmlObject struct {
-	XMLName    xml.Name `xml:"CenterStatus"`
-	CENTERSTID int      `xml:"CENTERSTID,attr"`
+	XMLName    xml.Name `xml:"OperationStatus"`
+	OPERSTATID int      `xml:"OPERSTATID,attr"`
 	NAME       string   `xml:"NAME,attr"`
 }
 
+// схема таблицы в БД
+
+const tableName = "as_operstat"
+const elementName = "OperationStatus"
+
 const schema = `CREATE TABLE ` + tableName + ` (
-    center_st_id INT UNIQUE NOT NULL,
+    oper_stat_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
-		PRIMARY KEY (center_st_id));`
+		PRIMARY KEY (oper_stat_id));`
 
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	w.Add(1)
@@ -44,13 +47,12 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	pathToFile := format2 + "/" + fileName
 
 	// Подсчитываем, сколько элементов нужно обработать
-	//fmt.Println("Подсчет строк")
-	// _, err := helpers.CountElementsInXML(pathToFile, elementName)
+	//_, err := helpers.CountElementsInXML(pathToFile, elementName)
 	// if err != nil {
 	// 	fmt.Println("Error counting elements in XML file:", err)
 	// 	return
 	// }
-	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
+	// fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -86,17 +88,16 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					fmt.Println("Error in decode element:", err)
 					return
 				}
-				query := "INSERT INTO " + tableName + " (center_st_id, name) VALUES ($1, $2)"
-				db.MustExec(query, item.CENTERSTID, item.NAME)
+				query := "INSERT INTO " + tableName + " (oper_stat_id, name) VALUES ($1, $2)"
+				db.MustExec(query, item.OPERSTATID, item.NAME)
 
 				s := strconv.Itoa(total)
+
 				c <- elementName + " " + s + " rows affected"
-				//fmt.Printf("\r"+elementName+": %s rows\n", s)
+
 			}
 		default:
 		}
 
 	}
-
-	//fmt.Printf("\nTotal processed items in "+elementName+": %d \n", total)
 }

@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"time"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -96,7 +96,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		live_status BOOL NOT NULL,
 		PRIMARY KEY (ao_id));`
 
-func Export(c chan string, db *sqlx.DB, format *string) {
+func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
+	w.Add(1)
+	defer w.Done()
 	// make sure log.txt exists first
 	// use touch command to create if log.txt does not exist
 	var logFile *os.File
@@ -175,25 +177,6 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 				//fmt.Println(item, "\n\n")
 
 				var err error
-				var updDate, startDate, endDate time.Time
-
-				updDate, err = time.Parse(dateformat, item.UPDATEDATE)
-				if err != nil {
-					log.Println("Error parse UPDATEDATE: ", err)
-					return
-				}
-
-				startDate, err = time.Parse(dateformat, item.STARTDATE)
-				if err != nil {
-					log.Println("Error parse STARTDATE: ", err)
-					return
-				}
-
-				endDate, err = time.Parse(dateformat, item.ENDDATE)
-				if err != nil {
-					log.Println("Error parse ENDDATE: ", err)
-					return
-				}
 
 				query := `INSERT INTO ` + tableName + ` (ao_guid,
 					formal_name,
@@ -256,7 +239,7 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 					item.TERRIFNSUL,
 					item.OKATO,
 					item.OKTMO,
-					updDate,
+					item.UPDATEDATE,
 					item.SHORTNAME,
 					item.AOLEVEL,
 					item.PARENTGUID,
@@ -269,8 +252,8 @@ func Export(c chan string, db *sqlx.DB, format *string) {
 					item.CENTSTATUS,
 					item.OPERSTATUS,
 					item.CURRSTATUS,
-					startDate,
-					endDate,
+					item.STARTDATE,
+					item.ENDDATE,
 					item.NORMDOC,
 					item.LIVESTATUS)
 
