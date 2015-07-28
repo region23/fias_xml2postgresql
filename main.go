@@ -13,7 +13,6 @@ import (
 	"github.com/nsf/termbox-go"
 
 	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
 	"github.com/pavlik/fias_xml2postgresql/structures/address_object_type"
@@ -132,21 +131,21 @@ func main() {
 
 	as_stat := make(chan string, 1000)
 	ao_stat := make(chan string, 1000)
-	ao_counter := make(chan int, 1000)
+	//ao_counter := make(chan int, 1000)
 	cs_stat := make(chan string, 1000)
 	cur_stat := make(chan string, 1000)
 	est_stat := make(chan string, 1000)
 	house_stat := make(chan string, 1000)
-	house_counter := make(chan int, 1000)
+	//house_counter := make(chan int, 1000)
 	house_int_stat := make(chan string, 1000)
-	house_int_counter := make(chan int, 1000)
+	//house_int_counter := make(chan int, 1000)
 	house_st_stat := make(chan string, 1000)
 	intv_stat := make(chan string, 1000)
 	landmark_stat := make(chan string, 1000)
-	landmark_counter := make(chan int, 1000)
+	//landmark_counter := make(chan int, 1000)
 	ndtype_stat := make(chan string, 1000)
 	nd_stat := make(chan string, 1000)
-	nd_counter := make(chan int, 1000)
+	//nd_counter := make(chan int, 1000)
 	oper_stat := make(chan string, 1000)
 	socrbase_stat := make(chan string, 1000)
 	str_stat := make(chan string, 1000)
@@ -167,19 +166,19 @@ func main() {
 		go address_object_type.Export(&w, socrbase_stat, db, format)
 
 		go landmark.Export(&w, landmark_stat, db, format)
-		go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
+		//go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
 
 		go normative_document.Export(&w, nd_stat, db, format)
-		go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
+		//go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
 
 		go house_interval.Export(&w, house_int_stat, db, format)
-		go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
+		//go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
 
 		go address_object.Export(&w, ao_stat, db, format)
-		go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
+		//go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
 
 		go house.Export(&w, house_stat, db, format)
-		go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
+		//go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
 
 	} else if *format == "dbf" {
 		// todo: обработка DBF-файлов
@@ -226,23 +225,23 @@ func main() {
 			case msgs[13] = <-ao_stat:
 			case msgs[14] = <-house_stat:
 			}
-			select {
-			// case msgs[0] = <-as_stat:
-			// case msgs[1] = <-est_stat:
-			// case msgs[2] = <-intv_stat:
-			// case msgs[3] = <-str_stat:
-			// case msgs[4] = <-cs_stat:
-			// case msgs[5] = <-oper_stat:
-			// case msgs[6] = <-ndtype_stat:
-			// case msgs[7] = <-house_st_stat:
-			// case msgs[8] = <-cur_stat:
-			// case msgs[9] = <-socrbase_stat:
-			case counters[10] = <-landmark_counter:
-			case counters[11] = <-nd_counter:
-			case counters[12] = <-house_int_counter:
-			case counters[13] = <-ao_counter:
-			case counters[14] = <-house_counter:
-			}
+			// select {
+			// // case msgs[0] = <-as_stat:
+			// // case msgs[1] = <-est_stat:
+			// // case msgs[2] = <-intv_stat:
+			// // case msgs[3] = <-str_stat:
+			// // case msgs[4] = <-cs_stat:
+			// // case msgs[5] = <-oper_stat:
+			// // case msgs[6] = <-ndtype_stat:
+			// // case msgs[7] = <-house_st_stat:
+			// // case msgs[8] = <-cur_stat:
+			// // case msgs[9] = <-socrbase_stat:
+			// // case counters[10] = <-landmark_counter:
+			// // case counters[11] = <-nd_counter:
+			// // case counters[12] = <-house_int_counter:
+			// // case counters[13] = <-ao_counter:
+			// // case counters[14] = <-house_counter:
+			// }
 		}
 
 		w.Wait()
