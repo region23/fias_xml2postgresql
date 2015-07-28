@@ -13,7 +13,7 @@ import (
 )
 
 const dateformat = "2006-01-02"
-const tableName = "centerst"
+const tableName = "as_centerst"
 const elementName = "CenterStatus"
 
 // Статус центра

@@ -84,15 +84,6 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	pathToFile := format2 + "/" + fileName
 
-	// Подсчитываем, сколько элементов нужно обработать
-	//fmt.Println("Подсчет строк")
-	// _, err := helpers.CountElementsInXML(pathToFile, elementName)
-	// if err != nil {
-	// 	fmt.Println("Error counting elements in XML file:", err)
-	// 	return
-	// }
-	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
-
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
 		fmt.Println("Error opening file:", err)

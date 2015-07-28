@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/nsf/termbox-go"
 
 	_ "github.com/lib/pq"
+	"github.com/pavlik/fias_xml2postgresql/helpers"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
 	"github.com/pavlik/fias_xml2postgresql/structures/address_object_type"
@@ -43,7 +45,7 @@ func printf_tb(x, y int, fg, bg termbox.Attribute, format string, args ...interf
 
 const timeLayout = "2006-01-02 в 15:04"
 
-func progressPrint(msgs [15]string, startTime time.Time, finished bool) {
+func progressPrint(msgs [15]string, counters [15]int, startTime time.Time, finished bool) {
 	color := [15]termbox.Attribute{termbox.ColorWhite,
 		termbox.ColorWhite,
 		termbox.ColorWhite,
@@ -76,6 +78,9 @@ func progressPrint(msgs [15]string, startTime time.Time, finished bool) {
 
 	y := 0
 	for _, v := range msgs {
+		if counters[y] > 0 {
+			v = fmt.Sprintf("%s. Total count is %d", v, counters[y])
+		}
 		printf_tb(0, y+3, color[y], termbox.ColorDefault, v)
 		y++
 	}
@@ -108,48 +113,80 @@ func main() {
 	db := initDb()
 	defer db.Close()
 
+	// make sure log.txt exists first
+	// use touch command to create if log.txt does not exist
+	var logFile *os.File
+	var err error
+	if _, err1 := os.Stat("log.txt"); err1 == nil {
+		logFile, err = os.OpenFile("log.txt", os.O_WRONLY, 0666)
+	} else {
+		logFile, err = os.Create("log.txt")
+	}
+	if err != nil {
+		panic(err)
+	}
+	defer logFile.Close()
+	log.SetOutput(logFile)
+
 	var w sync.WaitGroup
 
 	as_stat := make(chan string, 1000)
 	ao_stat := make(chan string, 1000)
+	ao_counter := make(chan int, 1000)
 	cs_stat := make(chan string, 1000)
 	cur_stat := make(chan string, 1000)
 	est_stat := make(chan string, 1000)
 	house_stat := make(chan string, 1000)
+	house_counter := make(chan int, 1000)
 	house_int_stat := make(chan string, 1000)
+	house_int_counter := make(chan int, 1000)
 	house_st_stat := make(chan string, 1000)
 	intv_stat := make(chan string, 1000)
 	landmark_stat := make(chan string, 1000)
+	landmark_counter := make(chan int, 1000)
 	ndtype_stat := make(chan string, 1000)
 	nd_stat := make(chan string, 1000)
+	nd_counter := make(chan int, 1000)
 	oper_stat := make(chan string, 1000)
 	socrbase_stat := make(chan string, 1000)
 	str_stat := make(chan string, 1000)
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
+
 		go actual_status.Export(&w, as_stat, db, format)
-		go address_object.Export(&w, ao_stat, db, format)
-		go center_status.Export(&w, cs_stat, db, format)
-		go current_status.Export(&w, cur_stat, db, format)
 		go estate_status.Export(&w, est_stat, db, format)
-		go house.Export(&w, house_stat, db, format)
-		go house_interval.Export(&w, house_int_stat, db, format)
-		go house_state_status.Export(&w, house_st_stat, db, format)
 		go interval_status.Export(&w, intv_stat, db, format)
-		go landmark.Export(&w, landmark_stat, db, format)
-		go normative_document_type.Export(&w, ndtype_stat, db, format)
-		go normative_document.Export(&w, nd_stat, db, format)
-		go operation_status.Export(&w, oper_stat, db, format)
-		go address_object_type.Export(&w, socrbase_stat, db, format)
 		go structure_status.Export(&w, str_stat, db, format)
+		go center_status.Export(&w, cs_stat, db, format)
+
+		go operation_status.Export(&w, oper_stat, db, format)
+		go normative_document_type.Export(&w, ndtype_stat, db, format)
+		go house_state_status.Export(&w, house_st_stat, db, format)
+		go current_status.Export(&w, cur_stat, db, format)
+		go address_object_type.Export(&w, socrbase_stat, db, format)
+
+		go landmark.Export(&w, landmark_stat, db, format)
+		go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
+
+		go normative_document.Export(&w, nd_stat, db, format)
+		go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
+
+		go house_interval.Export(&w, house_int_stat, db, format)
+		go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
+
+		go address_object.Export(&w, ao_stat, db, format)
+		go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
+
+		go house.Export(&w, house_stat, db, format)
+		go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
 
 	} else if *format == "dbf" {
 		// todo: обработка DBF-файлов
 		fmt.Println("обработка DBF-файлов")
 	}
 
-	err := termbox.Init()
+	err = termbox.Init()
 	if err != nil {
 		panic(err)
 	}
@@ -158,6 +195,8 @@ func main() {
 	termbox.SetInputMode(termbox.InputEsc)
 
 	var msgs [15]string
+	var counters [15]int
+
 	timer := time.After(time.Second * 1)
 	go func() {
 
@@ -166,31 +205,48 @@ func main() {
 		for {
 			select {
 			case <-timer:
-				progressPrint(msgs, startTime, false)
+				progressPrint(msgs, counters, startTime, false)
 				timer = time.After(time.Second * 1)
 			default:
 			}
 			select {
 			case msgs[0] = <-as_stat:
-			case msgs[1] = <-ao_stat:
-			case msgs[2] = <-cs_stat:
-			case msgs[3] = <-cur_stat:
-			case msgs[4] = <-est_stat:
-			case msgs[5] = <-house_stat:
-			case msgs[6] = <-house_int_stat:
+			case msgs[1] = <-est_stat:
+			case msgs[2] = <-intv_stat:
+			case msgs[3] = <-str_stat:
+			case msgs[4] = <-cs_stat:
+			case msgs[5] = <-oper_stat:
+			case msgs[6] = <-ndtype_stat:
 			case msgs[7] = <-house_st_stat:
-			case msgs[8] = <-intv_stat:
-			case msgs[9] = <-landmark_stat:
-			case msgs[10] = <-ndtype_stat:
+			case msgs[8] = <-cur_stat:
+			case msgs[9] = <-socrbase_stat:
+			case msgs[10] = <-landmark_stat:
 			case msgs[11] = <-nd_stat:
-			case msgs[12] = <-oper_stat:
-			case msgs[13] = <-socrbase_stat:
-			case msgs[14] = <-str_stat:
+			case msgs[12] = <-house_int_stat:
+			case msgs[13] = <-ao_stat:
+			case msgs[14] = <-house_stat:
+			}
+			select {
+			// case msgs[0] = <-as_stat:
+			// case msgs[1] = <-est_stat:
+			// case msgs[2] = <-intv_stat:
+			// case msgs[3] = <-str_stat:
+			// case msgs[4] = <-cs_stat:
+			// case msgs[5] = <-oper_stat:
+			// case msgs[6] = <-ndtype_stat:
+			// case msgs[7] = <-house_st_stat:
+			// case msgs[8] = <-cur_stat:
+			// case msgs[9] = <-socrbase_stat:
+			case counters[10] = <-landmark_counter:
+			case counters[11] = <-nd_counter:
+			case counters[12] = <-house_int_counter:
+			case counters[13] = <-ao_counter:
+			case counters[14] = <-house_counter:
 			}
 		}
 
 		w.Wait()
-		progressPrint(msgs, startTime, true)
+		progressPrint(msgs, counters, startTime, true)
 	}()
 
 loop:

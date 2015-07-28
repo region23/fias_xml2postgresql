@@ -13,7 +13,7 @@ import (
 )
 
 const dateformat = "2006-01-02"
-const tableName = "addrobj"
+const tableName = "as_addrobj"
 const elementName = "Object"
 
 // Классификатор адресообразующих элементов

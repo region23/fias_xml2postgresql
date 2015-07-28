@@ -2,18 +2,32 @@ package helpers
 
 import (
 	"encoding/xml"
-	"fmt"
+	"log"
 	"os"
+	"sync"
 )
 
 // CountElementsInXML возвращает количество узлов в XML-файле
-func CountElementsInXML(pathToFile string, countedElement string) (int, error) {
+func CountElementsInXML(w *sync.WaitGroup, c chan int, tableName string, countedElement string) {
+	w.Add(1)
+	defer w.Done()
+
 	var err error
+
+	format := "xml"
+
+	fileName, err2 := SearchFile(tableName, format)
+	if err2 != nil {
+		log.Fatalln("Error searching file:", err2)
+		panic(err)
+	}
+
+	pathToFile := format + "/" + fileName
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return 0, err
+		log.Fatalln("Error opening file:", err)
+		panic(err)
 	}
 
 	defer xmlFile.Close()
@@ -35,13 +49,9 @@ func CountElementsInXML(pathToFile string, countedElement string) (int, error) {
 
 			if inElement == countedElement {
 				total++
-				fmt.Printf("\rПодсчет строк: %d\n", total)
+				c <- total
 			}
 		default:
 		}
-
 	}
-
-	return total, nil
-
 }

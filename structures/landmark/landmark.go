@@ -13,7 +13,7 @@ import (
 )
 
 const dateformat = "2006-01-02"
-const tableName = "landmark"
+const tableName = "as_landmark"
 const elementName = "Landmark"
 
 // Описание мест расположения  имущественных объектов
@@ -57,24 +57,6 @@ const schema = `CREATE TABLE ` + tableName + ` (
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	w.Add(1)
 	defer w.Done()
-	// make sure log.txt exists first
-	// use touch command to create if log.txt does not exist
-	var logFile *os.File
-	var err error
-	if _, err1 := os.Stat("log.txt"); err1 == nil {
-		logFile, err = os.OpenFile("log.txt", os.O_WRONLY, 0666)
-	} else {
-		logFile, err = os.Create("log.txt")
-	}
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer logFile.Close()
-
-	// direct all log messages to log.txt
-	log.SetOutput(logFile)
 
 	helpers.DropAndCreateTable(schema, tableName, db)
 
@@ -87,15 +69,6 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 	}
 
 	pathToFile := format2 + "/" + fileName
-
-	// Подсчитываем, сколько элементов нужно обработать
-	//fmt.Println("Подсчет строк")
-	// _, err := helpers.CountElementsInXML(pathToFile, elementName)
-	// if err != nil {
-	// 	fmt.Println("Error counting elements in XML file:", err)
-	// 	return
-	// }
-	//fmt.Println("\nВ ", elementName, " содержится ", countedElements, " строк")
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
@@ -177,12 +150,8 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 				s := strconv.Itoa(total)
 				c <- elementName + " " + s + " rows affected"
-				//fmt.Printf("\r"+elementName+": %s rows", s)
 			}
 		default:
 		}
-
 	}
-
-	//fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
 }

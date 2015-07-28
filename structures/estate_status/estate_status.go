@@ -24,7 +24,7 @@ type XmlObject struct {
 
 // схема таблицы в БД
 
-const tableName = "eststat"
+const tableName = "as_eststat"
 const elementName = "EstateStatus"
 
 const schema = `CREATE TABLE ` + tableName + ` (
