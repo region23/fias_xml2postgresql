@@ -30,7 +30,7 @@ type XmlObject struct {
 
 const schema = `CREATE TABLE ` + tableName + ` (
     norm_doc_id UUID NOT NULL,
-    doc_name VARCHAR(500),
+    doc_name VARCHAR(1000),
     doc_date TIMESTAMP,
     doc_num VARCHAR(20),
     doc_type INT NOT NULL,
