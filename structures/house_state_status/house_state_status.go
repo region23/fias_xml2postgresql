@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -89,9 +88,7 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 				query := "INSERT INTO " + tableName + " (house_st_id, name) VALUES ($1, $2)"
 				db.MustExec(query, item.HOUSESTID, item.NAME)
 
-				s := strconv.Itoa(total)
-				c <- elementName + " " + s + " rows affected"
-				//fmt.Printf("\r"+elementName+": %s rows\n", s)
+				c <- helpers.PrintRowsAffected(elementName, total)
 			}
 		default:
 		}

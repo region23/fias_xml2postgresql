@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"log"
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -261,9 +260,7 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					log.Fatal(err)
 				}
 
-				s := strconv.Itoa(total)
-				c <- elementName + " " + s + " rows affected"
-				//fmt.Printf("\r"+elementName+": %s rows", s)
+				c <- helpers.PrintRowsAffected(elementName, total)
 			}
 		default:
 		}

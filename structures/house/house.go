@@ -4,7 +4,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"os"
-	"strconv"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -42,7 +41,7 @@ type XmlObject struct {
 
 // схема таблицы в БД
 
-const tableName = "as_house_"
+const tableName = "as_house"
 const elementName = "House"
 
 const schema = `CREATE TABLE ` + tableName + ` (
@@ -76,7 +75,7 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	var format2 string
 	format2 = *format
-	fileName, err2 := helpers.SearchFile(tableName, format2)
+	fileName, err2 := helpers.SearchFile(tableName+"_", format2)
 	if err2 != nil {
 		fmt.Println("Error searching file:", err2)
 		return
@@ -167,8 +166,7 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 					item.NORMDOC,
 					item.COUNTER)
 
-				s := strconv.Itoa(total)
-				c <- elementName + " " + s + " rows affected"
+				c <- helpers.PrintRowsAffected(elementName, total)
 			}
 		default:
 		}
