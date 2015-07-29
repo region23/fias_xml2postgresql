@@ -96,7 +96,7 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		PRIMARY KEY (ao_id));`
 
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
-	w.Add(1)
+
 	defer w.Done()
 	// make sure log.txt exists first
 	// use touch command to create if log.txt does not exist

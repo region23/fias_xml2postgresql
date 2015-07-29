@@ -9,6 +9,8 @@ _obj
 _test
 xml
 dbf
+xml_full
+xml_delta
 
 # Architecture specific extensions/prefixes
 *.[568vq]

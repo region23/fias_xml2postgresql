@@ -71,7 +71,7 @@ func progressPrint(msgs [15]string, counters [15]int, startTime time.Time, finis
 	if !finished {
 		printf_tb(0, 21, termbox.ColorCyan, termbox.ColorBlack, fmt.Sprintf("и уже длится %.0f минут", duration.Minutes()))
 	} else {
-		printf_tb(0, 21, termbox.ColorGreen, termbox.ColorBlack, fmt.Sprintf("База экспортировалась за %.0f минут. Экспорт завершен.", duration.Minutes()))
+		printf_tb(0, 21, termbox.ColorGreen, termbox.ColorBlack, fmt.Sprintf("База экспортировалась %.0f минут. Экспорт завершен.", duration.Minutes()))
 	}
 	printf_tb(0, 22, termbox.ColorMagenta|termbox.AttrUnderline, termbox.ColorBlack, "Для прерывания экспорта и выхода из программы нажмите CTRL+Q")
 
@@ -128,6 +128,7 @@ func main() {
 	log.SetOutput(logFile)
 
 	var w sync.WaitGroup
+	w.Add(15)
 
 	as_stat := make(chan string, 1000)
 	ao_stat := make(chan string, 1000)
@@ -149,6 +150,9 @@ func main() {
 	oper_stat := make(chan string, 1000)
 	socrbase_stat := make(chan string, 1000)
 	str_stat := make(chan string, 1000)
+
+	done := make(chan bool, 1000)
+	//done <- false
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
@@ -203,9 +207,12 @@ func main() {
 
 		for {
 			select {
+			case <-done:
+				progressPrint(msgs, counters, startTime, true)
+				return
 			case <-timer:
 				progressPrint(msgs, counters, startTime, false)
-				timer = time.After(time.Second * 1)
+				timer = time.After(time.Millisecond)
 			default:
 			}
 			select {
@@ -243,9 +250,12 @@ func main() {
 			// // case counters[14] = <-house_counter:
 			// }
 		}
+	}()
 
+	go func() {
 		w.Wait()
-		progressPrint(msgs, counters, startTime, true)
+		done <- true
+		// или close(done), по желанию
 	}()
 
 loop:

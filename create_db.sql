@@ -1,0 +1,21 @@
+-- Role: dev
+
+DROP ROLE dev;
+
+CREATE ROLE dev LOGIN
+  NOSUPERUSER INHERIT NOCREATEDB NOCREATEROLE NOREPLICATION;
+
+  -- Database: fias
+
+DROP DATABASE fias;
+
+CREATE DATABASE fias
+  WITH OWNER = postgres
+       ENCODING = 'UTF8'
+       TABLESPACE = pg_default
+       LC_COLLATE = 'ru_RU.UTF-8'
+       LC_CTYPE = 'ru_RU.UTF-8'
+       CONNECTION LIMIT = -1;
+GRANT CONNECT, TEMPORARY ON DATABASE fias TO public;
+GRANT ALL ON DATABASE fias TO postgres;
+GRANT ALL ON DATABASE fias TO dev;

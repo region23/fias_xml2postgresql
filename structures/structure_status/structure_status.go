@@ -33,7 +33,7 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		PRIMARY KEY (str_stat_id));`
 
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
-	w.Add(1)
+
 	defer w.Done()
 	helpers.DropAndCreateTable(schema, tableName, db)
 
