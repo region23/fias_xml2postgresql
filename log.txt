@@ -1,0 +1,1 @@
+/home/pavel/gocode/src/github.com/pavlik/fias_xml2postgresql/structures/address_object/address_object_bulk.go:138: sql: Transaction has already been committed or rolled back

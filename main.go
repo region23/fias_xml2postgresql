@@ -178,7 +178,7 @@ func main() {
 		go house_interval.Export(&w, house_int_stat, db, format)
 		//go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
 
-		go address_object.Export(&w, ao_stat, db, format)
+		go address_object.ExportBulk(&w, ao_stat, db, format)
 		//go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
 
 		go house.Export(&w, house_stat, db, format)
