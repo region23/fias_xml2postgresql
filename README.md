@@ -11,7 +11,7 @@
 ![Программа работает в терминале и выглядит следующим образом :)](screenshot.png)
 
 ## Установка
-1. Скачайте утилиту ```go get -u github.com/pavlik/fias_xml2postgresql```
+1. Скачайте утилиту `go get -u github.com/pavlik/fias_xml2postgresql`
 2. Перейдите в директорию с исходниками `cd $GOPATH/src/github.com/pavlik/fias_xml2postgresql`
 3. Скачайте все зависимости `go get -u`
 4. В этой директории создайте папку `xml` (позже будет создаваться автоматически).
