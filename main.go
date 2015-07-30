@@ -68,10 +68,20 @@ func progressPrint(msgs [15]string, counters [15]int, startTime time.Time, finis
 	printf_tb(0, 20, termbox.ColorCyan, termbox.ColorBlack, fmt.Sprintf("Конвертация началась %s", startTime.Format(timeLayout)))
 
 	duration := time.Since(startTime)
-	if !finished {
-		printf_tb(0, 21, termbox.ColorCyan, termbox.ColorBlack, fmt.Sprintf("и уже длится %.0f минут", duration.Minutes()))
+	var durationText string
+
+	if duration.Seconds() < 60 {
+		durationText = fmt.Sprintf("%.1f секунд", duration.Seconds())
+	} else if duration.Minutes() < 60 {
+		durationText = fmt.Sprintf("%.1f минут", duration.Minutes())
 	} else {
-		printf_tb(0, 21, termbox.ColorGreen, termbox.ColorBlack, fmt.Sprintf("База экспортировалась %.0f минут. Экспорт завершен.", duration.Minutes()))
+		durationText = fmt.Sprintf("%.1f часов", duration.Hours())
+	}
+
+	if !finished {
+		printf_tb(0, 21, termbox.ColorCyan, termbox.ColorBlack, fmt.Sprintf("и уже длится %s", durationText))
+	} else {
+		printf_tb(0, 21, termbox.ColorGreen, termbox.ColorBlack, fmt.Sprintf("База экспортировалась %s. Экспорт завершен.", durationText))
 	}
 	printf_tb(0, 22, termbox.ColorMagenta|termbox.AttrUnderline, termbox.ColorBlack, "Для прерывания экспорта и выхода из программы нажмите CTRL+Q")
 
@@ -157,31 +167,31 @@ func main() {
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
 
-		go actual_status.Export(&w, as_stat, db, format)
-		go estate_status.Export(&w, est_stat, db, format)
-		go interval_status.Export(&w, intv_stat, db, format)
-		go structure_status.Export(&w, str_stat, db, format)
-		go center_status.Export(&w, cs_stat, db, format)
+		go actual_status.ExportBulk(&w, as_stat, db, format)
+		go estate_status.ExportBulk(&w, est_stat, db, format)
+		go interval_status.ExportBulk(&w, intv_stat, db, format)
+		go structure_status.ExportBulk(&w, str_stat, db, format)
+		go center_status.ExportBulk(&w, cs_stat, db, format)
 
-		go operation_status.Export(&w, oper_stat, db, format)
-		go normative_document_type.Export(&w, ndtype_stat, db, format)
-		go house_state_status.Export(&w, house_st_stat, db, format)
-		go current_status.Export(&w, cur_stat, db, format)
-		go address_object_type.Export(&w, socrbase_stat, db, format)
+		go operation_status.ExportBulk(&w, oper_stat, db, format)
+		go normative_document_type.ExportBulk(&w, ndtype_stat, db, format)
+		go house_state_status.ExportBulk(&w, house_st_stat, db, format)
+		go current_status.ExportBulk(&w, cur_stat, db, format)
+		go address_object_type.ExportBulk(&w, socrbase_stat, db, format)
 
-		go landmark.Export(&w, landmark_stat, db, format)
+		go landmark.ExportBulk(&w, landmark_stat, db, format)
 		//go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
 
-		go normative_document.Export(&w, nd_stat, db, format)
+		go normative_document.ExportBulk(&w, nd_stat, db, format)
 		//go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
 
-		go house_interval.Export(&w, house_int_stat, db, format)
+		go house_interval.ExportBulk(&w, house_int_stat, db, format)
 		//go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
 
 		go address_object.ExportBulk(&w, ao_stat, db, format)
 		//go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
 
-		go house.Export(&w, house_stat, db, format)
+		go house.ExportBulk(&w, house_stat, db, format)
 		//go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
 
 	} else if *format == "dbf" {

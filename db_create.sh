@@ -1,2 +1,2 @@
 #!/bin/bash
-psql -f db_create.sql
+psql -U postgres -f db_create.sql
