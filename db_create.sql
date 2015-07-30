@@ -1,0 +1,6 @@
+DROP DATABASE IF EXISTS fias;
+DROP ROLE IF EXISTS dev;
+
+CREATE DATABASE fias;
+CREATE USER dev WITH password 'dev';
+GRANT ALL privileges ON DATABASE fias TO dev;
