@@ -11,28 +11,11 @@ import (
 	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
+func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, logger *log.Logger) {
+
+	log.Fatal("Фаталитиии")
 
 	defer w.Done()
-	// make sure log.txt exists first
-	// use touch command to create if log.txt does not exist
-	var logFile *os.File
-	var err error
-	if _, err1 := os.Stat("log.txt"); err1 == nil {
-		logFile, err = os.OpenFile("log.txt", os.O_WRONLY, 0666)
-	} else {
-		logFile, err = os.Create("log.txt")
-	}
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer logFile.Close()
-
-	log.SetFlags(log.Llongfile)
-	// direct all log messages to log.txt
-	log.SetOutput(logFile)
 
 	helpers.DropAndCreateTable(schema, tableName, db)
 

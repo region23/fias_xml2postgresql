@@ -18,7 +18,7 @@ func SearchFile(filePartName string, dir string) (string, error) {
 
 	filesInfo, err = ioutil.ReadDir(dir)
 	if err != nil {
-		fmt.Println("Error Reading dir "+dir+":", err)
+		//fmt.Println("Error Reading dir "+dir+":", err)
 		return "", err
 	}
 

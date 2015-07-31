@@ -8,7 +8,7 @@ import (
 )
 
 // CountElementsInXML возвращает количество узлов в XML-файле
-func CountElementsInXML(w *sync.WaitGroup, c chan int, tableName string, countedElement string) {
+func CountElementsInXML(w *sync.WaitGroup, c chan int, tableName string, countedElement string, logger *log.Logger) {
 	w.Add(1)
 	defer w.Done()
 
@@ -18,16 +18,16 @@ func CountElementsInXML(w *sync.WaitGroup, c chan int, tableName string, counted
 
 	fileName, err2 := SearchFile(tableName, format)
 	if err2 != nil {
-		log.Fatalln("Error searching file:", err2)
-		panic(err)
+		logger.Fatalln("Error searching file:", err2)
+		logger.Panic(err)
 	}
 
 	pathToFile := format + "/" + fileName
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
-		log.Fatalln("Error opening file:", err)
-		panic(err)
+		logger.Fatalln("Error opening file:", err)
+		logger.Panic(err)
 	}
 
 	defer xmlFile.Close()

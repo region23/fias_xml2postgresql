@@ -147,7 +147,7 @@ import (
 	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
+func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, logger *log.Logger) {
 
 	defer w.Done()
 	// make sure log.txt exists first

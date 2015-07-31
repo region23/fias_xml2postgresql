@@ -14,10 +14,10 @@ func concat(values ...string) string {
 	return buffer.String()
 }
 
-func humanizeInt(n int64) string {
+func humanizeInt(n int) string {
 	var pretty string
 
-	ns := strconv.FormatInt(n, 10)
+	ns := strconv.Itoa(n)
 	nsl := len(ns)
 
 	for i := nsl; i > 0; i-- {
@@ -31,5 +31,5 @@ func humanizeInt(n int64) string {
 }
 
 func PrintRowsAffected(elementName string, currentRow int) string {
-	return fmt.Sprintf("Таблица %s. Обработано %d строк.", elementName, humanizeInt(currentRow))
+	return fmt.Sprintf("Таблица %s. Обработано %s строк.", elementName, humanizeInt(currentRow))
 }

@@ -112,7 +112,25 @@ func checkErr(err error, msg string) {
 	}
 }
 
+func logInit() *log.Logger {
+	logFile := "log.txt"
+
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		log.Fatalln("Failed to open log file", logFile, ":", err)
+	}
+
+	logger := log.New(file,
+		"PREFIX: ",
+		log.Ldate|log.Ltime|log.Lshortfile)
+
+	return logger
+}
+
 func main() {
+
+	logger := logInit()
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var format = flag.String("format", "xml", "File format for import (xml or dbf)")
@@ -121,21 +139,6 @@ func main() {
 	// initialize the DbMap
 	db := initDb()
 	defer db.Close()
-
-	// make sure log.txt exists first
-	// use touch command to create if log.txt does not exist
-	var logFile *os.File
-	var err error
-	if _, err1 := os.Stat("log.txt"); err1 == nil {
-		logFile, err = os.OpenFile("log.txt", os.O_WRONLY, 0666)
-	} else {
-		logFile, err = os.Create("log.txt")
-	}
-	if err != nil {
-		panic(err)
-	}
-	defer logFile.Close()
-	log.SetOutput(logFile)
 
 	var w sync.WaitGroup
 	w.Add(15)
@@ -167,31 +170,31 @@ func main() {
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
 
-		go actual_status.ExportBulk(&w, as_stat, db, format)
-		go estate_status.ExportBulk(&w, est_stat, db, format)
-		go interval_status.ExportBulk(&w, intv_stat, db, format)
-		go structure_status.ExportBulk(&w, str_stat, db, format)
-		go center_status.ExportBulk(&w, cs_stat, db, format)
+		go actual_status.ExportBulk(&w, as_stat, db, format, logger)
+		go estate_status.ExportBulk(&w, est_stat, db, format, logger)
+		go interval_status.ExportBulk(&w, intv_stat, db, format, logger)
+		go structure_status.ExportBulk(&w, str_stat, db, format, logger)
+		go center_status.ExportBulk(&w, cs_stat, db, format, logger)
 
-		go operation_status.ExportBulk(&w, oper_stat, db, format)
-		go normative_document_type.ExportBulk(&w, ndtype_stat, db, format)
-		go house_state_status.ExportBulk(&w, house_st_stat, db, format)
-		go current_status.ExportBulk(&w, cur_stat, db, format)
-		go address_object_type.ExportBulk(&w, socrbase_stat, db, format)
+		go operation_status.ExportBulk(&w, oper_stat, db, format, logger)
+		go normative_document_type.ExportBulk(&w, ndtype_stat, db, format, logger)
+		go house_state_status.ExportBulk(&w, house_st_stat, db, format, logger)
+		go current_status.ExportBulk(&w, cur_stat, db, format, logger)
+		go address_object_type.ExportBulk(&w, socrbase_stat, db, format, logger)
 
-		go landmark.ExportBulk(&w, landmark_stat, db, format)
+		go landmark.ExportBulk(&w, landmark_stat, db, format, logger)
 		//go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
 
-		go normative_document.ExportBulk(&w, nd_stat, db, format)
+		go normative_document.ExportBulk(&w, nd_stat, db, format, logger)
 		//go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
 
-		go house_interval.ExportBulk(&w, house_int_stat, db, format)
+		go house_interval.ExportBulk(&w, house_int_stat, db, format, logger)
 		//go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
 
-		go address_object.ExportBulk(&w, ao_stat, db, format)
+		go address_object.ExportBulk(&w, ao_stat, db, format, logger)
 		//go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
 
-		go house.ExportBulk(&w, house_stat, db, format)
+		go house.ExportBulk(&w, house_stat, db, format, logger)
 		//go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
 
 	} else if *format == "dbf" {
@@ -199,9 +202,9 @@ func main() {
 		fmt.Println("обработка DBF-файлов")
 	}
 
-	err = termbox.Init()
+	err := termbox.Init()
 	if err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 	defer termbox.Close()
 
@@ -279,7 +282,7 @@ loop:
 			termbox.Flush()
 			//progressPrint(msg1, msg2, msg3, msg4, msg5)
 		case termbox.EventError:
-			panic(ev.Err)
+			logger.Panic(err)
 		}
 	}
 }
