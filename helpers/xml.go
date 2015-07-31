@@ -18,16 +18,14 @@ func CountElementsInXML(w *sync.WaitGroup, c chan int, tableName string, counted
 
 	fileName, err2 := SearchFile(tableName, format)
 	if err2 != nil {
-		logger.Fatalln("Error searching file:", err2)
-		logger.Panic(err)
+		logger.Panicln("Error searching file:", err)
 	}
 
 	pathToFile := format + "/" + fileName
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
-		logger.Fatalln("Error opening file:", err)
-		logger.Panic(err)
+		logger.Panic("Error opening file:", err)
 	}
 
 	defer xmlFile.Close()

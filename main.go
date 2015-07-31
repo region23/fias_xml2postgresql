@@ -121,7 +121,7 @@ func logInit() *log.Logger {
 	}
 
 	logger := log.New(file,
-		"PREFIX: ",
+		"FATAL: ",
 		log.Ldate|log.Ltime|log.Lshortfile)
 
 	return logger
@@ -285,4 +285,10 @@ loop:
 			logger.Panic(err)
 		}
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Program terminated. Main goroutine paniced:", r)
+		}
+	}()
 }

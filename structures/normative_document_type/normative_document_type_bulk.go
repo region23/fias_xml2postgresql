@@ -14,25 +14,6 @@ import (
 func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, logger *log.Logger) {
 
 	defer w.Done()
-	// make sure log.txt exists first
-	// use touch command to create if log.txt does not exist
-	var logFile *os.File
-	var err error
-	if _, err1 := os.Stat("log.txt"); err1 == nil {
-		logFile, err = os.OpenFile("log.txt", os.O_WRONLY, 0666)
-	} else {
-		logFile, err = os.Create("log.txt")
-	}
-
-	if err != nil {
-		panic(err)
-	}
-
-	defer logFile.Close()
-
-	log.SetFlags(log.Llongfile)
-	// direct all log messages to log.txt
-	log.SetOutput(logFile)
 
 	helpers.DropAndCreateTable(schema, tableName, db)
 
@@ -40,16 +21,14 @@ func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, l
 	format2 = *format
 	fileName, err2 := helpers.SearchFile(tableName, format2)
 	if err2 != nil {
-		log.Println("Error searching file:", err2)
-		return
+		logger.Panicln("Error searching file:", err2)
 	}
 
 	pathToFile := format2 + "/" + fileName
 
 	xmlFile, err := os.Open(pathToFile)
 	if err != nil {
-		log.Println("Error opening file:", err)
-		return
+		logger.Panicln("Error opening file:", err)
 	}
 
 	defer xmlFile.Close()
@@ -61,14 +40,14 @@ func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, l
 
 	txn, err := db.Begin()
 	if err != nil {
-		log.Fatal(err)
+		logger.Panicln(err)
 	}
 
 	query := pq.CopyIn(tableName, "nd_type_id", "name")
 
 	stmt, err := txn.Prepare(query)
 	if err != nil {
-		log.Fatal(err)
+		logger.Panicln(err)
 	}
 
 	for {
@@ -77,29 +56,29 @@ func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, l
 
 			_, err = stmt.Exec()
 			if err != nil {
-				log.Fatal(err)
+				logger.Panicln(err)
 			}
 
 			err = stmt.Close()
 			if err != nil {
-				log.Fatal(err)
+				logger.Panicln(err)
 			}
 
 			err = txn.Commit()
 			if err != nil {
-				log.Fatal(err)
+				logger.Panicln(err)
 			}
 
 			//c <- helpers.PrintRowsAffected(elementName, total)
 
 			txn, err = db.Begin()
 			if err != nil {
-				log.Fatal(err)
+				logger.Panicln(err)
 			}
 
 			stmt, err = txn.Prepare(query)
 			if err != nil {
-				log.Fatal(err)
+				logger.Panicln(err)
 			}
 		}
 		// Read tokens from the XML document in a stream.
@@ -110,17 +89,17 @@ func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, l
 			if i > 0 {
 				_, err = stmt.Exec()
 				if err != nil {
-					log.Fatal(err)
+					logger.Panicln(err)
 				}
 
 				err = stmt.Close()
 				if err != nil {
-					log.Fatal(err)
+					logger.Panicln(err)
 				}
 
 				err = txn.Commit()
 				if err != nil {
-					log.Fatal(err)
+					logger.Panicln(err)
 				}
 			}
 
@@ -142,14 +121,13 @@ func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, l
 				// variable item which is a ActualStatus (se above)
 				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
-					log.Println("Error in decode element:", err)
-					return
+					logger.Panicln("Error in decode element:", err)
 				}
 
 				_, err = stmt.Exec(item.NDTYPEID, item.NAME)
 
 				if err != nil {
-					log.Fatal(err)
+					logger.Panicln(err)
 				}
 				c <- helpers.PrintRowsAffected(elementName, total)
 				i++
