@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"runtime/pprof"
 	"sync"
 	"time"
 
@@ -78,10 +79,10 @@ func progressPrint(msgs [15]string, counters [15]int, startTime time.Time, finis
 		durationText = fmt.Sprintf("%.1f часов", duration.Hours())
 	}
 
-	if !finished {
-		printf_tb(0, 21, termbox.ColorCyan, termbox.ColorBlack, fmt.Sprintf("и уже длится %s", durationText))
-	} else {
+	if finished {
 		printf_tb(0, 21, termbox.ColorGreen, termbox.ColorBlack, fmt.Sprintf("База экспортировалась %s. Экспорт завершен.", durationText))
+	} else {
+		printf_tb(0, 21, termbox.ColorCyan, termbox.ColorBlack, fmt.Sprintf("и уже длится %s", durationText))
 	}
 	printf_tb(0, 22, termbox.ColorMagenta|termbox.AttrUnderline, termbox.ColorBlack, "Для прерывания экспорта и выхода из программы нажмите CTRL+Q")
 
@@ -131,10 +132,26 @@ func main() {
 
 	logger := logInit()
 
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("Program terminated. Main goroutine paniced:", r)
+		}
+	}()
+
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	var format = flag.String("format", "xml", "File format for import (xml or dbf)")
+	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
 
 	// initialize the DbMap
 	db := initDb()
@@ -164,8 +181,9 @@ func main() {
 	socrbase_stat := make(chan string, 1000)
 	str_stat := make(chan string, 1000)
 
-	done := make(chan bool, 1000)
+	done := make(chan bool, 1)
 	//done <- false
+	//logger.Println(<-done)
 
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
@@ -204,7 +222,7 @@ func main() {
 
 	err := termbox.Init()
 	if err != nil {
-		logger.Panic(err)
+		logger.Fatal(err)
 	}
 	defer termbox.Close()
 
@@ -213,37 +231,91 @@ func main() {
 	var msgs [15]string
 	var counters [15]int
 
+	doneStat := false
+
 	timer := time.After(time.Second * 1)
 	go func() {
 
 		startTime := time.Now()
 
+		//	progressLoop:
 		for {
 			select {
-			case <-done:
+			case doneStat = <-done:
+				logger.Println("Попали в done")
 				progressPrint(msgs, counters, startTime, true)
+
+				//break progressLoop
 				return
 			case <-timer:
+				if doneStat {
+					logger.Println("Попали в таймер после done")
+				}
 				progressPrint(msgs, counters, startTime, false)
 				timer = time.After(time.Millisecond)
-			default:
-			}
-			select {
+			// default:
+			// }
+			// select {
 			case msgs[0] = <-as_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[0] после done")
+				}
 			case msgs[1] = <-est_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[1] после done")
+				}
 			case msgs[2] = <-intv_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[2] после done")
+				}
 			case msgs[3] = <-str_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[3] после done")
+				}
 			case msgs[4] = <-cs_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[4] после done")
+				}
 			case msgs[5] = <-oper_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[5] после done")
+				}
 			case msgs[6] = <-ndtype_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[6] после done")
+				}
 			case msgs[7] = <-house_st_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[7] после done")
+				}
 			case msgs[8] = <-cur_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[8] после done")
+				}
 			case msgs[9] = <-socrbase_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[9] после done")
+				}
 			case msgs[10] = <-landmark_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[10] после done")
+				}
 			case msgs[11] = <-nd_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[11] после done")
+				}
 			case msgs[12] = <-house_int_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[12] после done")
+				}
 			case msgs[13] = <-ao_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[13] после done")
+				}
 			case msgs[14] = <-house_stat:
+				if doneStat {
+					logger.Println("Попали в msgs[14] после done")
+				}
 			}
 			// select {
 			// // case msgs[0] = <-as_stat:
@@ -268,6 +340,7 @@ func main() {
 	go func() {
 		w.Wait()
 		done <- true
+		logger.Println("Все горутины завершились")
 		// или close(done), по желанию
 	}()
 
@@ -282,13 +355,8 @@ loop:
 			termbox.Flush()
 			//progressPrint(msg1, msg2, msg3, msg4, msg5)
 		case termbox.EventError:
-			logger.Panic(err)
+			logger.Fatal(err)
 		}
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Program terminated. Main goroutine paniced:", r)
-		}
-	}()
 }

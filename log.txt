@@ -1,2 +1,4 @@
-PREFIX: 2015/07/31 17:52:48 actual_status_bulk.go:15: Arrrrrr!
-FATAL: 2015/07/31 17:55:02 actual_status_bulk.go:15: Arrrrrr!
+FATAL: 2015/08/01 16:55:24 main.go:245: Попали в done
+FATAL: 2015/08/01 16:55:24 main.go:343: Все горутины завершились
+FATAL: 2015/08/01 18:54:42 main.go:343: Все горутины завершились
+FATAL: 2015/08/01 18:54:42 main.go:245: Попали в done
