@@ -238,84 +238,33 @@ func main() {
 
 		startTime := time.Now()
 
-		//	progressLoop:
 		for {
 			select {
 			case doneStat = <-done:
 				logger.Println("Попали в done")
 				progressPrint(msgs, counters, startTime, true)
-
-				//break progressLoop
 				return
 			case <-timer:
-				if doneStat {
-					logger.Println("Попали в таймер после done")
-				}
 				progressPrint(msgs, counters, startTime, false)
 				timer = time.After(time.Millisecond)
 			// default:
 			// }
 			// select {
 			case msgs[0] = <-as_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[0] после done")
-				}
 			case msgs[1] = <-est_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[1] после done")
-				}
 			case msgs[2] = <-intv_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[2] после done")
-				}
 			case msgs[3] = <-str_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[3] после done")
-				}
 			case msgs[4] = <-cs_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[4] после done")
-				}
 			case msgs[5] = <-oper_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[5] после done")
-				}
 			case msgs[6] = <-ndtype_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[6] после done")
-				}
 			case msgs[7] = <-house_st_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[7] после done")
-				}
 			case msgs[8] = <-cur_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[8] после done")
-				}
 			case msgs[9] = <-socrbase_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[9] после done")
-				}
 			case msgs[10] = <-landmark_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[10] после done")
-				}
 			case msgs[11] = <-nd_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[11] после done")
-				}
 			case msgs[12] = <-house_int_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[12] после done")
-				}
 			case msgs[13] = <-ao_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[13] после done")
-				}
 			case msgs[14] = <-house_stat:
-				if doneStat {
-					logger.Println("Попали в msgs[14] после done")
-				}
 			}
 			// select {
 			// // case msgs[0] = <-as_stat:
@@ -341,7 +290,6 @@ func main() {
 		w.Wait()
 		done <- true
 		logger.Println("Все горутины завершились")
-		// или close(done), по желанию
 	}()
 
 loop:
