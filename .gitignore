@@ -28,6 +28,7 @@ _testmain.go
 *.exe
 *.test
 *.prof
+*.pdf
 
 *.DS_Store
 *.xml
@@ -35,4 +36,3 @@ _testmain.go
 *.DBT
 
 log.txt
-*.prof
