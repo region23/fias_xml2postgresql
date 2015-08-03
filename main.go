@@ -45,7 +45,7 @@ func printf_tb(x, y int, fg, bg termbox.Attribute, format string, args ...interf
 
 const timeLayout = "2006-01-02 в 15:04"
 
-func progressPrint(msgs [15]string, counters [15]int, startTime time.Time, finished bool) {
+func progressPrint(msgs [15]string, startTime time.Time, finished bool) {
 	color := [15]termbox.Attribute{termbox.ColorWhite,
 		termbox.ColorWhite,
 		termbox.ColorWhite,
@@ -88,9 +88,9 @@ func progressPrint(msgs [15]string, counters [15]int, startTime time.Time, finis
 
 	y := 0
 	for _, v := range msgs {
-		if counters[y] > 0 {
-			v = fmt.Sprintf("%s. Total count is %d", v, counters[y])
-		}
+		// if counters[y] > 0 {
+		// 	v = fmt.Sprintf("%s. Total count is %d", v, counters[y])
+		// }
 		printf_tb(0, y+3, color[y], termbox.ColorDefault, v)
 		y++
 	}
@@ -229,7 +229,7 @@ func main() {
 	termbox.SetInputMode(termbox.InputEsc)
 
 	var msgs [15]string
-	var counters [15]int
+	// var counters [15]int
 
 	doneStat := false
 
@@ -242,10 +242,10 @@ func main() {
 			select {
 			case doneStat = <-done:
 				logger.Println("Попали в done")
-				progressPrint(msgs, counters, startTime, true)
+				progressPrint(msgs, startTime, true)
 				return
 			case <-timer:
-				progressPrint(msgs, counters, startTime, false)
+				progressPrint(msgs, startTime, false)
 				timer = time.After(time.Millisecond)
 			// default:
 			// }
