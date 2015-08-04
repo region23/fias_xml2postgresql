@@ -1,0 +1,6 @@
+FATAL: 2015/08/03 23:22:57 actual_status_bulk.go:133: 0: XMLName xml.Name = { ActualStatus}, as_actstat
+FATAL: 2015/08/03 23:22:57 actual_status_bulk.go:133: 1: ActStatId int = 0, act_stat_id
+FATAL: 2015/08/03 23:22:57 actual_status_bulk.go:133: 2: Name string = Не актуальный, name
+FATAL: 2015/08/03 23:22:57 actual_status_bulk.go:133: 0: XMLName xml.Name = { ActualStatus}, as_actstat
+FATAL: 2015/08/03 23:22:57 actual_status_bulk.go:133: 1: ActStatId int = 1, act_stat_id
+FATAL: 2015/08/03 23:22:57 actual_status_bulk.go:133: 2: Name string = Актуальный, name

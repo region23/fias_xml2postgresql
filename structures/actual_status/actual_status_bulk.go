@@ -4,6 +4,7 @@ import (
 	"encoding/xml"
 	"log"
 	"os"
+	"reflect"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -122,6 +123,13 @@ func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, l
 				err = decoder.DecodeElement(&item, &se)
 				if err != nil {
 					logger.Fatalln("Error in decode element:", err)
+				}
+
+				s := reflect.ValueOf(&item).Elem()
+				typeOfT := s.Type()
+				for i := 0; i < s.NumField(); i++ {
+					f := s.Field(i)
+					logger.Printf("%d: %s %s = %v, %s\n", i, typeOfT.Field(i).Name, f.Type(), f.Interface(), typeOfT.Field(i).Tag.Get("db"))
 				}
 
 				_, err = stmt.Exec(item.ActStatId, item.Name)

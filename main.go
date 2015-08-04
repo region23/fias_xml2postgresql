@@ -15,20 +15,6 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
-	"github.com/pavlik/fias_xml2postgresql/structures/address_object_type"
-	"github.com/pavlik/fias_xml2postgresql/structures/center_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/current_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/estate_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/house"
-	"github.com/pavlik/fias_xml2postgresql/structures/house_interval"
-	"github.com/pavlik/fias_xml2postgresql/structures/house_state_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/interval_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/landmark"
-	"github.com/pavlik/fias_xml2postgresql/structures/normative_document"
-	"github.com/pavlik/fias_xml2postgresql/structures/normative_document_type"
-	"github.com/pavlik/fias_xml2postgresql/structures/operation_status"
-	"github.com/pavlik/fias_xml2postgresql/structures/structure_status"
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -189,31 +175,31 @@ func main() {
 		fmt.Println("обработка XML-файлов")
 
 		go actual_status.ExportBulk(&w, as_stat, db, format, logger)
-		go estate_status.ExportBulk(&w, est_stat, db, format, logger)
-		go interval_status.ExportBulk(&w, intv_stat, db, format, logger)
-		go structure_status.ExportBulk(&w, str_stat, db, format, logger)
-		go center_status.ExportBulk(&w, cs_stat, db, format, logger)
-
-		go operation_status.ExportBulk(&w, oper_stat, db, format, logger)
-		go normative_document_type.ExportBulk(&w, ndtype_stat, db, format, logger)
-		go house_state_status.ExportBulk(&w, house_st_stat, db, format, logger)
-		go current_status.ExportBulk(&w, cur_stat, db, format, logger)
-		go address_object_type.ExportBulk(&w, socrbase_stat, db, format, logger)
-
-		go landmark.ExportBulk(&w, landmark_stat, db, format, logger)
-		//go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
-
-		go normative_document.ExportBulk(&w, nd_stat, db, format, logger)
-		//go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
-
-		go house_interval.ExportBulk(&w, house_int_stat, db, format, logger)
-		//go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
-
-		go address_object.ExportBulk(&w, ao_stat, db, format, logger)
-		//go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
-
-		go house.ExportBulk(&w, house_stat, db, format, logger)
-		//go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
+		// go estate_status.ExportBulk(&w, est_stat, db, format, logger)
+		// go interval_status.ExportBulk(&w, intv_stat, db, format, logger)
+		// go structure_status.ExportBulk(&w, str_stat, db, format, logger)
+		// go center_status.ExportBulk(&w, cs_stat, db, format, logger)
+		//
+		// go operation_status.ExportBulk(&w, oper_stat, db, format, logger)
+		// go normative_document_type.ExportBulk(&w, ndtype_stat, db, format, logger)
+		// go house_state_status.ExportBulk(&w, house_st_stat, db, format, logger)
+		// go current_status.ExportBulk(&w, cur_stat, db, format, logger)
+		// go address_object_type.ExportBulk(&w, socrbase_stat, db, format, logger)
+		//
+		// go landmark.ExportBulk(&w, landmark_stat, db, format, logger)
+		// //go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
+		//
+		// go normative_document.ExportBulk(&w, nd_stat, db, format, logger)
+		// //go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
+		//
+		// go house_interval.ExportBulk(&w, house_int_stat, db, format, logger)
+		// //go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
+		//
+		// go address_object.ExportBulk(&w, ao_stat, db, format, logger)
+		// //go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
+		//
+		// go house.ExportBulk(&w, house_stat, db, format, logger)
+		// //go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
 
 	} else if *format == "dbf" {
 		// todo: обработка DBF-файлов

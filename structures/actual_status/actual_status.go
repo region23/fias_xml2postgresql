@@ -13,9 +13,9 @@ import (
 
 // Статус актуальности ФИАС
 type XmlObject struct {
-	XMLName   xml.Name `xml:"ActualStatus"`
-	ActStatId int      `xml:"ACTSTATID,attr"`
-	Name      string   `xml:"NAME,attr"`
+	XMLName   xml.Name `xml:"ActualStatus" db:"as_actstat"`
+	ActStatId int      `xml:"ACTSTATID,attr" db:"act_stat_id"`
+	Name      string   `xml:"NAME,attr" db:"name"`
 }
 
 // схема таблицы в БД
