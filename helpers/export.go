@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -16,29 +17,28 @@ type xmlObjectName struct {
 	elementName string
 }
 
-func extractXMLObjectName(xmlObject *interface{}) xmlObjectName {
-	s := reflect.ValueOf(&xmlObject).Elem()
-	typeOfT := s.Type()
-	return xmlObjectName{tableName: typeOfT.Field(0).Tag.Get("db"), elementName: typeOfT.Field(0).Tag.Get("xml")}
+func extractXMLObjectName(xmlObject interface{}) xmlObjectName {
+	modelType := reflect.TypeOf(xmlObject)
+	field := modelType.Field(0)
+	return xmlObjectName{tableName: field.Tag.Get("db"), elementName: field.Tag.Get("xml")}
 }
 
-func extractFeilds(xmlObject *interface{}) []string {
-	s := reflect.ValueOf(&xmlObject).Elem()
-	fields := make([]string, s.NumField()-1)
-	typeOfT := s.Type()
+func extractFeilds(xmlObject interface{}) []string {
+	modelType := reflect.TypeOf(xmlObject)
+	fields := make([]string, modelType.NumField()-1)
 
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		if f.Type().Name() != "xml.Name" {
-			fields[i-1] = typeOfT.Field(i).Tag.Get("db")
+	for i := 0; i < modelType.NumField(); i++ {
+		field := modelType.Field(i)
+		if field.Type.String() != "xml.Name" {
+			fields[i-1] = field.Tag.Get("db")
 		}
 	}
-
 	return fields
 }
 
-func extractValues(xmlObject *interface{}) []interface{} {
-	s := reflect.ValueOf(&xmlObject).Elem()
+func extractValues(xmlObject interface{}) []interface{} {
+	fmt.Println(xmlObject)
+	s := reflect.ValueOf(xmlObject).Elem()
 	values := make([]interface{}, s.NumField()-1)
 
 	for i := 0; i < s.NumField(); i++ {
@@ -58,7 +58,7 @@ func extractValues(xmlObject *interface{}) []interface{} {
 }
 
 // ExportBulk экспортирует данные из xml-файла в таблицу указанную в описании xml-структуры
-func ExportBulk(schema *string, xmlObject interface{}, w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, logger *log.Logger) {
+func ExportBulk(schema string, xmlObject interface{}, w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, logger *log.Logger) {
 
 	defer w.Done()
 
@@ -163,16 +163,16 @@ func ExportBulk(schema *string, xmlObject interface{}, w *sync.WaitGroup, c chan
 
 			if inElement == objName.elementName {
 				total++
-				var item xmlObject
+				//var item xmlObject
 
 				// decode a whole chunk of following XML into the
 				// variable item which is a ActualStatus (se above)
-				err = decoder.DecodeElement(&item, &se)
+				err = decoder.DecodeElement(&xmlObject, &se)
 				if err != nil {
 					logger.Fatalln("Error in decode element:", err)
 				}
 
-				values := extractValues(item)
+				values := extractValues(xmlObject)
 				_, err = stmt.Exec(values...)
 
 				if err != nil {
