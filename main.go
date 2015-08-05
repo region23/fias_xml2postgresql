@@ -175,7 +175,9 @@ func main() {
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
 
-		go helpers.ExportBulk(actual_status.Schema, actual_status.XmlObject{}, &w, as_stat, db, format, logger)
+		//var asObj interface{}
+		asObj := &actual_status.XmlObject{}
+		go helpers.ExportBulk(actual_status.Schema, asObj, &w, as_stat, db, format, logger)
 		//go actual_status.ExportBulk(&w, as_stat, db, format, logger)
 		// go estate_status.ExportBulk(&w, est_stat, db, format, logger)
 		// go interval_status.ExportBulk(&w, intv_stat, db, format, logger)

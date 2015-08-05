@@ -18,17 +18,18 @@ type xmlObjectName struct {
 }
 
 func extractXMLObjectName(xmlObject interface{}) xmlObjectName {
-	modelType := reflect.TypeOf(xmlObject)
-	field := modelType.Field(0)
-	return xmlObjectName{tableName: field.Tag.Get("db"), elementName: field.Tag.Get("xml")}
+	v := reflect.ValueOf(xmlObject).Elem()
+	field := v.Type().Field(0)
+	obj := xmlObjectName{tableName: field.Tag.Get("db"), elementName: field.Tag.Get("xml")}
+	return obj
 }
 
 func extractFeilds(xmlObject interface{}) []string {
-	modelType := reflect.TypeOf(xmlObject)
-	fields := make([]string, modelType.NumField()-1)
+	v := reflect.ValueOf(xmlObject).Elem()
+	fields := make([]string, v.NumField()-1)
 
-	for i := 0; i < modelType.NumField(); i++ {
-		field := modelType.Field(i)
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Type().Field(i)
 		if field.Type.String() != "xml.Name" {
 			fields[i-1] = field.Tag.Get("db")
 		}
@@ -173,6 +174,7 @@ func ExportBulk(schema string, xmlObject interface{}, w *sync.WaitGroup, c chan 
 				}
 
 				values := extractValues(xmlObject)
+				fmt.Println(values)
 				_, err = stmt.Exec(values...)
 
 				if err != nil {
