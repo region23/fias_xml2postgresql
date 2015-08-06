@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"encoding/xml"
-	"fmt"
 	"log"
 	"os"
 	"reflect"
@@ -38,7 +37,7 @@ func extractFeilds(xmlObject interface{}) []string {
 }
 
 func extractValues(xmlObject interface{}) []interface{} {
-	fmt.Println(xmlObject)
+	//fmt.Println(xmlObject)
 	s := reflect.ValueOf(xmlObject).Elem()
 	values := make([]interface{}, s.NumField()-1)
 
@@ -59,14 +58,16 @@ func extractValues(xmlObject interface{}) []interface{} {
 }
 
 // ExportBulk экспортирует данные из xml-файла в таблицу указанную в описании xml-структуры
-func ExportBulk(schema string, xmlObject interface{}, w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, logger *log.Logger) {
+func ExportBulk(schema func(tableName string) string, xmlObject interface{}, w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, logger *log.Logger) {
 
 	defer w.Done()
+
+	const dateformat = "2006-01-02"
 
 	objName := extractXMLObjectName(xmlObject)
 	fields := extractFeilds(xmlObject)
 
-	DropAndCreateTable(schema, objName.tableName, db)
+	DropAndCreateTable(schema(objName.tableName), objName.tableName, db)
 
 	var format2 string
 	format2 = *format
@@ -174,7 +175,7 @@ func ExportBulk(schema string, xmlObject interface{}, w *sync.WaitGroup, c chan 
 				}
 
 				values := extractValues(xmlObject)
-				fmt.Println(values)
+				//logger.Println(values)
 				_, err = stmt.Exec(values...)
 
 				if err != nil {

@@ -15,13 +15,15 @@ type XmlObject struct {
 
 // схема таблицы в БД
 
-const tableName = "as_actstat"
-const elementName = "ActualStatus"
+// const tableName = "as_actstat"
+// const elementName = "ActualStatus"
 
-const Schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     act_stat_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
 		PRIMARY KEY (act_stat_id));`
+}
 
 // func (item XmlObject) String() string {
 // 	return fmt.Sprintf("\t ActStatId : %d - Name : %s \n", item.ActStatId, item.Name)

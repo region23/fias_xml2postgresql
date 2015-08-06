@@ -2,61 +2,57 @@ package address_object
 
 import (
 	"encoding/xml"
-	"log"
-	"os"
-	"sync"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
-const tableName = "as_addrobj"
-const elementName = "Object"
+// const dateformat = "2006-01-02"
+// const tableName = "as_addrobj"
+// const elementName = "Object"
 
 // Классификатор адресообразующих элементов
 type XmlObject struct {
-	XMLName    xml.Name `xml:"Object"`
-	AOGUID     string   `xml:"AOGUID,attr"`
-	FORMALNAME string   `xml:"FORMALNAME,attr"`
-	REGIONCODE int      `xml:"REGIONCODE,attr"`
-	AUTOCODE   int      `xml:"AUTOCODE,attr"`
-	AREACODE   int      `xml:"AREACODE,attr"`
-	CITYCODE   int      `xml:"CITYCODE,attr"`
-	CTARCODE   int      `xml:"CTARCODE,attr"`
-	PLACECODE  int      `xml:"PLACECODE,attr"`
-	STREETCODE int      `xml:"STREETCODE,attr,omitempty"`
-	EXTRCODE   int      `xml:"EXTRCODE,attr"`
-	SEXTCODE   int      `xml:"SEXTCODE,attr"`
-	OFFNAME    *string  `xml:"OFFNAME,attr,omitempty"`
-	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
-	IFNSFL     int      `xml:"IFNSFL,attr,omitempty"`
-	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty"`
-	IFNSUL     int      `xml:"IFNSUL,attr,omitempty"`
-	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty"`
-	OKATO      *string  `xml:"OKATO,attr,omitempty"`
-	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
-	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
-	SHORTNAME  string   `xml:"SHORTNAME,attr"`
-	AOLEVEL    int      `xml:"AOLEVEL,attr"`
-	PARENTGUID *string  `xml:"PARENTGUID,attr,omitempty"`
-	AOID       string   `xml:"AOID,attr"`
-	PREVID     *string  `xml:"PREVID,attr,omitempty"`
-	NEXTID     *string  `xml:"NEXTID,attr,omitempty"`
-	CODE       *string  `xml:"CODE,attr,omitempty"`
-	PLAINCODE  *string  `xml:"PLAINCODE,attr,omitempty"`
-	ACTSTATUS  bool     `xml:"ACTSTATUS,attr"`
-	CENTSTATUS bool     `xml:"CENTSTATUS,attr"`
-	OPERSTATUS int      `xml:"OPERSTATUS,attr"`
-	CURRSTATUS int      `xml:"CURRSTATUS,attr"`
-	STARTDATE  string   `xml:"STARTDATE,attr"`
-	ENDDATE    string   `xml:"ENDDATE,attr"`
-	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty"`
-	LIVESTATUS bool     `xml:"LIVESTATUS,attr"`
+	XMLName    xml.Name `xml:"Object" db:"as_addrobj"`
+	AOGUID     string   `xml:"AOGUID,attr" db:"ao_guid"`
+	FORMALNAME string   `xml:"FORMALNAME,attr" db:"formal_name"`
+	REGIONCODE int      `xml:"REGIONCODE,attr" db:"region_code"`
+	AUTOCODE   int      `xml:"AUTOCODE,attr" db:"auto_code"`
+	AREACODE   int      `xml:"AREACODE,attr" db:"area_code"`
+	CITYCODE   int      `xml:"CITYCODE,attr" db:"city_code"`
+	CTARCODE   int      `xml:"CTARCODE,attr" db:"ctar_code"`
+	PLACECODE  int      `xml:"PLACECODE,attr" db:"place_code"`
+	STREETCODE int      `xml:"STREETCODE,attr,omitempty" db:"street_code"`
+	EXTRCODE   int      `xml:"EXTRCODE,attr" db:"extr_code"`
+	SEXTCODE   int      `xml:"SEXTCODE,attr" db:"sext_code"`
+	OFFNAME    *string  `xml:"OFFNAME,attr,omitempty" db:"off_name"`
+	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty" db:"postal_code"`
+	IFNSFL     int      `xml:"IFNSFL,attr,omitempty" db:"ifns_fl"`
+	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty" db:"terr_ifns_fl"`
+	IFNSUL     int      `xml:"IFNSUL,attr,omitempty" db:"ifns_ul"`
+	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty" db:"terr_ifns_ul"`
+	OKATO      *string  `xml:"OKATO,attr,omitempty" db:"okato"`
+	OKTMO      *string  `xml:"OKTMO,attr,omitempty" db:"oktmo"`
+	UPDATEDATE string   `xml:"UPDATEDATE,attr" db:"update_date"`
+	SHORTNAME  string   `xml:"SHORTNAME,attr" db:"short_name"`
+	AOLEVEL    int      `xml:"AOLEVEL,attr" db:"ao_level"`
+	PARENTGUID *string  `xml:"PARENTGUID,attr,omitempty" db:"parent_guid"`
+	AOID       string   `xml:"AOID,attr" db:"ao_id"`
+	PREVID     *string  `xml:"PREVID,attr,omitempty" db:"prev_id"`
+	NEXTID     *string  `xml:"NEXTID,attr,omitempty" db:"next_id"`
+	CODE       *string  `xml:"CODE,attr,omitempty" db:"code"`
+	PLAINCODE  *string  `xml:"PLAINCODE,attr,omitempty" db:"plain_code"`
+	ACTSTATUS  bool     `xml:"ACTSTATUS,attr" db:"act_status"`
+	CENTSTATUS bool     `xml:"CENTSTATUS,attr" db:"cent_status"`
+	OPERSTATUS int      `xml:"OPERSTATUS,attr" db:"oper_status"`
+	CURRSTATUS int      `xml:"CURRSTATUS,attr" db:"curr_status"`
+	STARTDATE  string   `xml:"STARTDATE,attr" db:"start_date"`
+	ENDDATE    string   `xml:"ENDDATE,attr" db:"end_date"`
+	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty" db:"norm_doc"`
+	LIVESTATUS bool     `xml:"LIVESTATUS,attr" db:"live_status"`
 }
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     ao_guid UUID NOT NULL,
     formal_name VARCHAR(120) NOT NULL,
 		region_code INT NOT NULL,
@@ -94,7 +90,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		norm_doc UUID,
 		live_status BOOL NOT NULL,
 		PRIMARY KEY (ao_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -269,3 +267,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	//fmt.Printf("\nВсего в "+elementName+" обработано %d строк\n", total)
 }
+*/

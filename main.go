@@ -16,6 +16,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pavlik/fias_xml2postgresql/helpers"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -199,6 +200,8 @@ func main() {
 		// go house_interval.ExportBulk(&w, house_int_stat, db, format, logger)
 		// //go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
 		//
+		aoObj := &address_object.XmlObject{}
+		go helpers.ExportBulk(address_object.Schema, aoObj, &w, ao_stat, db, format, logger)
 		// go address_object.ExportBulk(&w, ao_stat, db, format, logger)
 		// //go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
 		//
