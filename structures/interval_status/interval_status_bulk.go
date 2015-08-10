@@ -1,5 +1,6 @@
 package interval_status
 
+/*
 import (
 	"encoding/xml"
 	"log"
@@ -137,3 +138,4 @@ func ExportBulk(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string, l
 
 	}
 }
+*/

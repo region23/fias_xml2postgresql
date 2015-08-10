@@ -2,38 +2,34 @@ package address_object_type
 
 import (
 	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
+//const dateformat = "2006-01-02"
 
 // Статус действия
 type XmlObject struct {
-	XMLName  xml.Name `xml:"AddressObjectType"`
-	LEVEL    int      `xml:"LEVEL,attr"`
-	SCNAME   string   `xml:"SCNAME,attr"`
-	SOCRNAME string   `xml:"SOCRNAME,attr"`
-	KOD_T_ST string   `xml:"KOD_T_ST,attr"`
+	XMLName  xml.Name `xml:"AddressObjectType" db:"as_socrbase"`
+	LEVEL    int      `xml:"LEVEL,attr" db:"level"`
+	SCNAME   string   `xml:"SCNAME,attr" db:"sc_name"`
+	SOCRNAME string   `xml:"SOCRNAME,attr" db:"socr_name"`
+	KOD_T_ST string   `xml:"KOD_T_ST,attr" db:"kod_t_st"`
 }
 
 // схема таблицы в БД
 
-const tableName = "as_socrbase"
-const elementName = "AddressObjectType"
+// const tableName = "as_socrbase"
+// const elementName = "AddressObjectType"
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     level INT NOT NULL,
     sc_name VARCHAR(20),
     socr_name VARCHAR(60),
     kod_t_st INT UNIQUE NOT NULL,
 		PRIMARY KEY (kod_t_st));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -112,3 +108,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	}
 }
+*/

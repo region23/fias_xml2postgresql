@@ -2,34 +2,30 @@ package operation_status
 
 import (
 	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
+// const dateformat = "2006-01-02"
 
 // Статус действия
 type XmlObject struct {
-	XMLName    xml.Name `xml:"OperationStatus"`
-	OPERSTATID int      `xml:"OPERSTATID,attr"`
-	NAME       string   `xml:"NAME,attr"`
+	XMLName    xml.Name `xml:"OperationStatus" db:"as_operstat"`
+	OPERSTATID int      `xml:"OPERSTATID,attr" db:"oper_stat_id"`
+	NAME       string   `xml:"NAME,attr" db:"name"`
 }
 
 // схема таблицы в БД
 
-const tableName = "as_operstat"
-const elementName = "OperationStatus"
+// const tableName = "as_operstat"
+// const elementName = "OperationStatus"
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     oper_stat_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
 		PRIMARY KEY (oper_stat_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -97,3 +93,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	}
 }
+*/

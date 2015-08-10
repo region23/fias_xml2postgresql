@@ -2,36 +2,34 @@ package estate_status
 
 import (
 	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
+// const dateformat = "2006-01-02"
 
 // Признак владения
 type XmlObject struct {
-	XMLName   xml.Name `xml:"EstateStatus"`
-	ESTSTATID int      `xml:"ESTSTATID,attr"`
-	NAME      string   `xml:"NAME,attr"`
-	SHORTNAME string   `xml:"SHORTNAME,attr"`
+	XMLName   xml.Name `xml:"EstateStatus" db:"as_eststat"`
+	ESTSTATID int      `xml:"ESTSTATID,attr" db:"est_stat_id"`
+	NAME      string   `xml:"NAME,attr" db:"name"`
+	SHORTNAME string   `xml:"SHORTNAME,attr" db:"short_name"`
 }
 
 // схема таблицы в БД
 
-const tableName = "as_eststat"
-const elementName = "EstateStatus"
+// const tableName = "as_eststat"
+// const elementName = "EstateStatus"
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     est_stat_id INT UNIQUE NOT NULL,
     name VARCHAR(20) NOT NULL,
 		short_name VARCHAR(20),
 		PRIMARY KEY (est_stat_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -101,3 +99,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	//fmt.Printf("Total processed items in CurrentStatus: %d \n", total)
 }
+*/

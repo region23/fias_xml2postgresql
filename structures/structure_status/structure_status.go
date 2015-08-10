@@ -1,37 +1,31 @@
 package structure_status
 
-import (
-	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
+import "encoding/xml"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
-)
-
-const dateformat = "2006-01-02"
+//const dateformat = "2006-01-02"
 
 // Признак строения
 type XmlObject struct {
-	XMLName   xml.Name `xml:"StructureStatus"`
-	STRSTATID int      `xml:"STRSTATID,attr"`
-	NAME      string   `xml:"NAME,attr"`
-	SHORTNAME string   `xml:"SHORTNAME,attr"`
+	XMLName   xml.Name `xml:"StructureStatus" db:"as_strstat"`
+	STRSTATID int      `xml:"STRSTATID,attr" db:"str_stat_id"`
+	NAME      string   `xml:"NAME,attr" db:"name"`
+	SHORTNAME string   `xml:"SHORTNAME,attr" db:"short_name"`
 }
 
 // схема таблицы в БД
 
-const tableName = "as_strstat"
-const elementName = "StructureStatus"
+// const tableName = "as_strstat"
+// const elementName = "StructureStatus"
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     str_stat_id INT UNIQUE NOT NULL,
     name VARCHAR(20) NOT NULL,
     short_name VARCHAR(20),
 		PRIMARY KEY (str_stat_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -108,3 +102,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	}
 }
+*/

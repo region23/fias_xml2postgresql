@@ -2,34 +2,30 @@ package current_status
 
 import (
 	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
+//const dateformat = "2006-01-02"
 
 // Статус актуальности КЛАДР 4.0
 type XmlObject struct {
-	XMLName    xml.Name `xml:"CurrentStatus"`
-	CURENTSTID int      `xml:"CURENTSTID,attr"`
-	NAME       string   `xml:"NAME,attr"`
+	XMLName    xml.Name `xml:"CurrentStatus" db:"as_curentst"`
+	CURENTSTID int      `xml:"CURENTSTID,attr" db:"curent_st_id"`
+	NAME       string   `xml:"NAME,attr" db:"name"`
 }
 
 // схема таблицы в БД
 
-const tableName = "as_curentst"
-const elementName = "CurrentStatus"
+// const tableName = "as_curentst"
+// const elementName = "CurrentStatus"
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     curent_st_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
 		PRIMARY KEY (curent_st_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -99,3 +95,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	//fmt.Printf("Total processed items in CurrentStatus: %d \n", total)
 }
+*/

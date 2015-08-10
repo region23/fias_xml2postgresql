@@ -1,32 +1,26 @@
 package normative_document_type
 
-import (
-	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
+import "encoding/xml"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
-)
-
-const dateformat = "2006-01-02"
-const tableName = "as_ndoctype"
-const elementName = "NormativeDocumentType"
+// const dateformat = "2006-01-02"
+// const tableName = "as_ndoctype"
+// const elementName = "NormativeDocumentType"
 
 // Статус центра
 type XmlObject struct {
-	XMLName  xml.Name `xml:"NormativeDocumentType"`
-	NDTYPEID int      `xml:"NDTYPEID,attr"`
-	NAME     string   `xml:"NAME,attr"`
+	XMLName  xml.Name `xml:"NormativeDocumentType" db:"as_ndoctype"`
+	NDTYPEID int      `xml:"NDTYPEID,attr" db:"nd_type_id"`
+	NAME     string   `xml:"NAME,attr" db:"name"`
 }
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     nd_type_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
 		PRIMARY KEY (nd_type_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -97,3 +91,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	//fmt.Printf("\nTotal processed items in "+elementName+": %d \n", total)
 }
+*/

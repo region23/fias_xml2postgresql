@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,6 +18,19 @@ import (
 	"github.com/pavlik/fias_xml2postgresql/helpers"
 	"github.com/pavlik/fias_xml2postgresql/structures/actual_status"
 	"github.com/pavlik/fias_xml2postgresql/structures/address_object"
+	"github.com/pavlik/fias_xml2postgresql/structures/address_object_type"
+	"github.com/pavlik/fias_xml2postgresql/structures/center_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/current_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/estate_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/house"
+	"github.com/pavlik/fias_xml2postgresql/structures/house_interval"
+	"github.com/pavlik/fias_xml2postgresql/structures/house_state_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/interval_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/landmark"
+	"github.com/pavlik/fias_xml2postgresql/structures/normative_document"
+	"github.com/pavlik/fias_xml2postgresql/structures/normative_document_type"
+	"github.com/pavlik/fias_xml2postgresql/structures/operation_status"
+	"github.com/pavlik/fias_xml2postgresql/structures/structure_status"
 )
 
 func print_tb(x, y int, fg, bg termbox.Attribute, msg string) {
@@ -34,21 +48,21 @@ func printf_tb(x, y int, fg, bg termbox.Attribute, format string, args ...interf
 const timeLayout = "2006-01-02 в 15:04"
 
 func progressPrint(msgs [15]string, startTime time.Time, finished bool) {
-	color := [15]termbox.Attribute{termbox.ColorWhite,
-		termbox.ColorWhite,
-		termbox.ColorWhite,
-		termbox.ColorWhite,
-		termbox.ColorWhite,
-		termbox.ColorBlue,
-		termbox.ColorBlue,
-		termbox.ColorBlue,
-		termbox.ColorBlue,
-		termbox.ColorBlue,
-		termbox.ColorRed,
-		termbox.ColorRed,
-		termbox.ColorRed,
-		termbox.ColorRed,
-		termbox.ColorRed}
+	/* color := [15]termbox.Attribute{termbox.ColorWhite,
+	termbox.ColorWhite,
+	termbox.ColorWhite,
+	termbox.ColorWhite,
+	termbox.ColorWhite,
+	termbox.ColorBlue,
+	termbox.ColorBlue,
+	termbox.ColorBlue,
+	termbox.ColorBlue,
+	termbox.ColorBlue,
+	termbox.ColorRed,
+	termbox.ColorRed,
+	termbox.ColorRed,
+	termbox.ColorRed,
+	termbox.ColorRed} */
 
 	termbox.Clear(termbox.ColorDefault, termbox.ColorDefault)
 
@@ -79,7 +93,12 @@ func progressPrint(msgs [15]string, startTime time.Time, finished bool) {
 		// if counters[y] > 0 {
 		// 	v = fmt.Sprintf("%s. Total count is %d", v, counters[y])
 		// }
-		printf_tb(0, y+3, color[y], termbox.ColorDefault, v)
+		if strings.HasPrefix(v, "!") {
+			printf_tb(0, y+3, termbox.ColorGreen, termbox.ColorDefault, strings.TrimPrefix(v, "!"))
+		} else {
+			printf_tb(0, y+3, termbox.ColorWhite, termbox.ColorDefault, v)
+		}
+		//printf_tb(0, y+3, color[y], termbox.ColorDefault, v)
 		y++
 	}
 
@@ -176,35 +195,69 @@ func main() {
 	if *format == "xml" {
 		fmt.Println("обработка XML-файлов")
 
-		//var asObj interface{}
 		asObj := &actual_status.XmlObject{}
 		go helpers.ExportBulk(actual_status.Schema, asObj, &w, as_stat, db, format, logger)
 		//go actual_status.ExportBulk(&w, as_stat, db, format, logger)
+
+		estsObj := &estate_status.XmlObject{}
+		go helpers.ExportBulk(estate_status.Schema, estsObj, &w, est_stat, db, format, logger)
 		// go estate_status.ExportBulk(&w, est_stat, db, format, logger)
+
+		isObj := &interval_status.XmlObject{}
+		go helpers.ExportBulk(interval_status.Schema, isObj, &w, intv_stat, db, format, logger)
 		// go interval_status.ExportBulk(&w, intv_stat, db, format, logger)
+
+		strsObj := &structure_status.XmlObject{}
+		go helpers.ExportBulk(structure_status.Schema, strsObj, &w, str_stat, db, format, logger)
+
 		// go structure_status.ExportBulk(&w, str_stat, db, format, logger)
+
 		// go center_status.ExportBulk(&w, cs_stat, db, format, logger)
-		//
+		csObj := &center_status.XmlObject{}
+		go helpers.ExportBulk(center_status.Schema, csObj, &w, cs_stat, db, format, logger)
+
+		osObj := &operation_status.XmlObject{}
+		go helpers.ExportBulk(operation_status.Schema, osObj, &w, oper_stat, db, format, logger)
 		// go operation_status.ExportBulk(&w, oper_stat, db, format, logger)
+
+		ndtObj := &normative_document_type.XmlObject{}
+		go helpers.ExportBulk(normative_document_type.Schema, ndtObj, &w, ndtype_stat, db, format, logger)
 		// go normative_document_type.ExportBulk(&w, ndtype_stat, db, format, logger)
+
+		hssObj := &house_state_status.XmlObject{}
+		go helpers.ExportBulk(house_state_status.Schema, hssObj, &w, house_st_stat, db, format, logger)
 		// go house_state_status.ExportBulk(&w, house_st_stat, db, format, logger)
+
+		cursObj := &current_status.XmlObject{}
+		go helpers.ExportBulk(current_status.Schema, cursObj, &w, cur_stat, db, format, logger)
 		// go current_status.ExportBulk(&w, cur_stat, db, format, logger)
+
+		aotObj := &address_object_type.XmlObject{}
+		go helpers.ExportBulk(address_object_type.Schema, aotObj, &w, socrbase_stat, db, format, logger)
 		// go address_object_type.ExportBulk(&w, socrbase_stat, db, format, logger)
-		//
+
+		landmarkObj := &landmark.XmlObject{}
+		go helpers.ExportBulk(landmark.Schema, landmarkObj, &w, landmark_stat, db, format, logger)
 		// go landmark.ExportBulk(&w, landmark_stat, db, format, logger)
 		// //go helpers.CountElementsInXML(&w, landmark_counter, "as_landmark", "Landmark")
-		//
+
+		ndObj := &normative_document.XmlObject{}
+		go helpers.ExportBulk(normative_document.Schema, ndObj, &w, nd_stat, db, format, logger)
 		// go normative_document.ExportBulk(&w, nd_stat, db, format, logger)
 		// //go helpers.CountElementsInXML(&w, nd_counter, "as_normdoc", "NormativeDocument")
-		//
+
+		hiObj := &house_interval.XmlObject{}
+		go helpers.ExportBulk(house_interval.Schema, hiObj, &w, house_int_stat, db, format, logger)
 		// go house_interval.ExportBulk(&w, house_int_stat, db, format, logger)
 		// //go helpers.CountElementsInXML(&w, house_int_counter, "as_houseint", "HouseInterval")
-		//
+
 		aoObj := &address_object.XmlObject{}
 		go helpers.ExportBulk(address_object.Schema, aoObj, &w, ao_stat, db, format, logger)
 		// go address_object.ExportBulk(&w, ao_stat, db, format, logger)
 		// //go helpers.CountElementsInXML(&w, ao_counter, "as_addrobj", "Object")
-		//
+
+		hObj := &house.XmlObject{}
+		go helpers.ExportBulk(house.Schema, hObj, &w, house_stat, db, format, logger)
 		// go house.ExportBulk(&w, house_stat, db, format, logger)
 		// //go helpers.CountElementsInXML(&w, house_counter, "as_house_", "House")
 

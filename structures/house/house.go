@@ -2,49 +2,43 @@ package house
 
 import (
 	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
+//const dateformat = "2006-01-02"
 
 // Сведения по номерам домов улиц городов и населенных пунктов, номера земельных участков и т.п
 type XmlObject struct {
-	XMLName    xml.Name `xml:"House"`
-	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
-	IFNSFL     int      `xml:"IFNSFL,attr,omitempty"`
-	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty"`
-	IFNSUL     int      `xml:"IFNSUL,attr,omitempty"`
-	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty"`
-	OKATO      *string  `xml:"OKATO,attr,omitempty"`
-	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
-	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
-	HOUSENUM   *string  `xml:"HOUSENUM,attr,omitempty"`
-	ESTSTATUS  int      `xml:"ESTSTATUS,attr"`
-	BUILDNUM   *string  `xml:"BUILDNUM,attr,omitempty"`
-	STRUCNUM   *string  `xml:"STRUCNUM,attr,omitempty"`
-	STRSTATUS  int      `xml:"STRSTATUS,attr"`
-	HOUSEID    string   `xml:"HOUSEID,attr"`
-	HOUSEGUID  string   `xml:"HOUSEGUID,attr"`
-	AOGUID     string   `xml:"AOGUID,attr"`
-	STARTDATE  string   `xml:"STARTDATE,attr"`
-	ENDDATE    string   `xml:"ENDDATE,attr"`
-	STATSTATUS int      `xml:"STATSTATUS,attr"`
-	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty"`
-	COUNTER    int      `xml:"COUNTER,attr"`
+	XMLName    xml.Name `xml:"House" db:"as_house_"`
+	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty" db:"postal_code"`
+	IFNSFL     int      `xml:"IFNSFL,attr,omitempty" db:"ifns_fl"`
+	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty" db:"terr_ifns_fl"`
+	IFNSUL     int      `xml:"IFNSUL,attr,omitempty" db:"ifns_ul"`
+	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty" db:"terr_ifns_ul"`
+	OKATO      *string  `xml:"OKATO,attr,omitempty" db:"okato"`
+	OKTMO      *string  `xml:"OKTMO,attr,omitempty" db:"oktmo"`
+	UPDATEDATE string   `xml:"UPDATEDATE,attr" db:"update_date"`
+	HOUSENUM   *string  `xml:"HOUSENUM,attr,omitempty" db:"house_num"`
+	ESTSTATUS  int      `xml:"ESTSTATUS,attr" db:"est_status"`
+	BUILDNUM   *string  `xml:"BUILDNUM,attr,omitempty" db:"build_num"`
+	STRUCNUM   *string  `xml:"STRUCNUM,attr,omitempty" db:"struc_num"`
+	STRSTATUS  int      `xml:"STRSTATUS,attr" db:"str_status"`
+	HOUSEID    string   `xml:"HOUSEID,attr" db:"house_id"`
+	HOUSEGUID  string   `xml:"HOUSEGUID,attr" db:"house_guid"`
+	AOGUID     string   `xml:"AOGUID,attr" db:"ao_guid"`
+	STARTDATE  string   `xml:"STARTDATE,attr" db:"start_date"`
+	ENDDATE    string   `xml:"ENDDATE,attr" db:"end_date"`
+	STATSTATUS int      `xml:"STATSTATUS,attr" db:"stat_status"`
+	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty" db:"norm_doc"`
+	COUNTER    int      `xml:"COUNTER,attr" db:"counter"`
 }
 
 // схема таблицы в БД
 
-const tableName = "as_house"
-const elementName = "House"
+// const tableName = "as_house"
+// const elementName = "House"
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     house_id UUID NOT NULL,
     postal_code VARCHAR(6),
 		ifns_fl INT,
@@ -67,7 +61,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		norm_doc UUID,
 		counter INT NOT NULL,
 		PRIMARY KEY (house_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -175,3 +171,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	//fmt.Printf("Total processed items in AddressObjects: %d \n", total)
 }
+*/

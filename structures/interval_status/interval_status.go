@@ -2,31 +2,27 @@ package interval_status
 
 import (
 	"encoding/xml"
-	"fmt"
-	"os"
-	"sync"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
-const tableName = "as_intvstat"
-const elementName = "IntervalStatus"
+// const dateformat = "2006-01-02"
+// const tableName = "as_intvstat"
+// const elementName = "IntervalStatus"
 
 // Статус интервала домов
 type XmlObject struct {
-	XMLName    xml.Name `xml:"IntervalStatus"`
-	INTVSTATID int      `xml:"INTVSTATID,attr"`
-	NAME       string   `xml:"NAME,attr"`
+	XMLName    xml.Name `xml:"IntervalStatus" db:"as_intvstat"`
+	INTVSTATID int      `xml:"INTVSTATID,attr" db:"intv_stat_id"`
+	NAME       string   `xml:"NAME,attr" db:"name"`
 }
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     intv_stat_id INT UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
 		PRIMARY KEY (intv_stat_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -97,3 +93,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	//fmt.Printf("\nTotal processed items in "+elementName+": %d \n", total)
 }
+*/

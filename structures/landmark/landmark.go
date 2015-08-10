@@ -1,41 +1,34 @@
 package landmark
 
-import (
-	"encoding/xml"
-	"log"
-	"os"
-	"sync"
+import "encoding/xml"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
-)
-
-const dateformat = "2006-01-02"
-const tableName = "as_landmark"
-const elementName = "Landmark"
+//
+// const dateformat = "2006-01-02"
+// const tableName = "as_landmark"
+// const elementName = "Landmark"
 
 // Описание мест расположения  имущественных объектов
 type XmlObject struct {
-	XMLName    xml.Name `xml:"Landmark"`
-	LOCATION   string   `xml:"LOCATION,attr"`
-	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
-	IFNSFL     int      `xml:"IFNSFL,attr,omitempty"`
-	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty"`
-	IFNSUL     int      `xml:"IFNSUL,attr,omitempty"`
-	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty"`
-	OKATO      *string  `xml:"OKATO,attr,omitempty"`
-	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
-	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
-	LANDID     string   `xml:"LANDID,attr"`
-	LANDGUID   string   `xml:"LANDGUID,attr"`
-	AOGUID     string   `xml:"AOGUID,attr"`
-	STARTDATE  string   `xml:"STARTDATE,attr"`
-	ENDDATE    string   `xml:"ENDDATE,attr"`
-	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty"`
+	XMLName    xml.Name `xml:"Landmark" db:"as_landmark"`
+	LOCATION   string   `xml:"LOCATION,attr" db:"location"`
+	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty" db:"postal_code"`
+	IFNSFL     int      `xml:"IFNSFL,attr,omitempty" db:"ifns_fl"`
+	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty" db:"terr_ifns_fl"`
+	IFNSUL     int      `xml:"IFNSUL,attr,omitempty" db:"ifns_ul"`
+	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty" db:"terr_ifns_ul"`
+	OKATO      *string  `xml:"OKATO,attr,omitempty" db:"okato"`
+	OKTMO      *string  `xml:"OKTMO,attr,omitempty" db:"oktmo"`
+	UPDATEDATE string   `xml:"UPDATEDATE,attr" db:"update_date"`
+	LANDID     string   `xml:"LANDID,attr" db:"land_id"`
+	LANDGUID   string   `xml:"LANDGUID,attr" db:"land_guid"`
+	AOGUID     string   `xml:"AOGUID,attr" db:"ao_guid"`
+	STARTDATE  string   `xml:"STARTDATE,attr" db:"start_date"`
+	ENDDATE    string   `xml:"ENDDATE,attr" db:"end_date"`
+	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty" db:"norm_doc"`
 }
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     location VARCHAR(500) NOT NULL,
     postal_code VARCHAR(6),
     ifns_fl INT,
@@ -52,7 +45,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		end_date TIMESTAMP NOT NULL,
 		norm_doc UUID,
 		PRIMARY KEY (land_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -153,3 +148,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 		}
 	}
 }
+*/

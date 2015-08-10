@@ -1,33 +1,25 @@
 package normative_document
 
-import (
-	"encoding/xml"
-	"log"
-	"os"
-	"sync"
+import "encoding/xml"
 
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
-)
-
-const dateformat = "2006-01-02"
-const tableName = "as_normdoc"
-const elementName = "NormativeDocument"
+// const dateformat = "2006-01-02"
+// const tableName = "as_normdoc"
+// const elementName = "NormativeDocument"
 
 // Сведения по нормативному документу,
 // являющемуся основанием присвоения адресному элементу наименования
 type XmlObject struct {
-	XMLName   xml.Name `xml:"NormativeDocument"`
-	NORMDOCID string   `xml:"NORMDOCID,attr"`
-	DOCNAME   *string  `xml:"DOCNAME,attr,omitempty"`
-	DOCDATE   *string  `xml:"DOCDATE,attr,omitempty"`
-	DOCNUM    *string  `xml:"DOCNUM,attr,omitempty"`
-	DOCTYPE   int      `xml:"DOCTYPE,attr"`
-	DOCIMGID  int      `xml:"DOCIMGID,attr,omitempty"`
+	XMLName   xml.Name `xml:"NormativeDocument" db:"as_normdoc"`
+	NORMDOCID string   `xml:"NORMDOCID,attr" db:"norm_doc_id"`
+	DOCNAME   *string  `xml:"DOCNAME,attr,omitempty" db:"doc_name"`
+	DOCDATE   *string  `xml:"DOCDATE,attr,omitempty" db:"doc_date"`
+	DOCNUM    *string  `xml:"DOCNUM,attr,omitempty" db:"doc_num"`
+	DOCTYPE   int      `xml:"DOCTYPE,attr" db:"doc_type"`
+	DOCIMGID  int      `xml:"DOCIMGID,attr,omitempty" db:"doc_img_id"`
 }
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     norm_doc_id UUID NOT NULL,
     doc_name VARCHAR(1000),
     doc_date TIMESTAMP,
@@ -35,7 +27,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
     doc_type INT NOT NULL,
     doc_img_id INT,
 		PRIMARY KEY (norm_doc_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -143,3 +137,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	}
 }
+*/

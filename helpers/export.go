@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"strings"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
@@ -66,12 +67,14 @@ func ExportBulk(schema func(tableName string) string, xmlObject interface{}, w *
 
 	objName := extractXMLObjectName(xmlObject)
 	fields := extractFeilds(xmlObject)
+	searchFileName := objName.tableName
+	objName.tableName = strings.TrimSuffix(objName.tableName, "_")
 
 	DropAndCreateTable(schema(objName.tableName), objName.tableName, db)
 
 	var format2 string
 	format2 = *format
-	fileName, err2 := SearchFile(objName.tableName, format2)
+	fileName, err2 := SearchFile(searchFileName, format2)
 	if err2 != nil {
 		logger.Fatalln("Error searching file:", err2)
 	}
@@ -188,4 +191,8 @@ func ExportBulk(schema func(tableName string) string, xmlObject interface{}, w *
 		}
 
 	}
+
+	// Если закончили обработку всех записей, ставим вначале строки восклицательный знак.
+	// Признак того, что все записи в данном файле обработаны
+	c <- "!" + PrintRowsAffected(objName.elementName, total)
 }

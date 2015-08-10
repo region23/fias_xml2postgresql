@@ -2,46 +2,39 @@ package house_interval
 
 import (
 	"encoding/xml"
-	"fmt"
-	"log"
-	"os"
-	"sync"
-
-	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
-	"github.com/pavlik/fias_xml2postgresql/helpers"
 )
 
-const dateformat = "2006-01-02"
+//const dateformat = "2006-01-02"
 
 // Интервалы домов
 type XmlObject struct {
-	XMLName    xml.Name `xml:"HouseInterval"`
-	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty"`
-	IFNSFL     int      `xml:"IFNSFL,attr,omitempty"`
-	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty"`
-	IFNSUL     int      `xml:"IFNSUL,attr,omitempty"`
-	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty"`
-	OKATO      *string  `xml:"OKATO,attr,omitempty"`
-	OKTMO      *string  `xml:"OKTMO,attr,omitempty"`
-	UPDATEDATE string   `xml:"UPDATEDATE,attr"`
-	INTSTART   int      `xml:"INTSTART,attr"`
-	INTEND     int      `xml:"INTEND,attr"`
-	HOUSEINTID string   `xml:"HOUSEINTID,attr"`
-	INTGUID    string   `xml:"INTGUID,attr"`
-	AOGUID     string   `xml:"AOGUID,attr"`
-	STARTDATE  string   `xml:"STARTDATE,attr"`
-	ENDDATE    string   `xml:"ENDDATE,attr"`
-	INTSTATUS  int      `xml:"INTSTATUS,attr"`
-	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty"`
-	COUNTER    int      `xml:"COUNTER,attr"`
+	XMLName    xml.Name `xml:"HouseInterval" db:"as_houseint"`
+	POSTALCODE *string  `xml:"POSTALCODE,attr,omitempty" db:"postal_code"`
+	IFNSFL     int      `xml:"IFNSFL,attr,omitempty" db:"ifns_fl"`
+	TERRIFNSFL int      `xml:"TERRIFNSFL,attr,omitempty" db:"terr_ifns_fl"`
+	IFNSUL     int      `xml:"IFNSUL,attr,omitempty" db:"ifns_ul"`
+	TERRIFNSUL int      `xml:"TERRIFNSUL,attr,omitempty" db:"terr_ifns_ul"`
+	OKATO      *string  `xml:"OKATO,attr,omitempty" db:"okato"`
+	OKTMO      *string  `xml:"OKTMO,attr,omitempty" db:"oktmo"`
+	UPDATEDATE string   `xml:"UPDATEDATE,attr" db:"update_date"`
+	INTSTART   int      `xml:"INTSTART,attr" db:"int_start"`
+	INTEND     int      `xml:"INTEND,attr" db:"int_end"`
+	HOUSEINTID string   `xml:"HOUSEINTID,attr" db:"house_int_id"`
+	INTGUID    string   `xml:"INTGUID,attr" db:"int_guid"`
+	AOGUID     string   `xml:"AOGUID,attr" db:"ao_guid"`
+	STARTDATE  string   `xml:"STARTDATE,attr" db:"start_date"`
+	ENDDATE    string   `xml:"ENDDATE,attr" db:"end_date"`
+	INTSTATUS  int      `xml:"INTSTATUS,attr" db:"int_status"`
+	NORMDOC    *string  `xml:"NORMDOC,attr,omitempty" db:"norm_doc"`
+	COUNTER    int      `xml:"COUNTER,attr" db:"counter"`
 }
 
 // схема таблицы в БД
-const tableName = "as_houseint"
-const elementName = "HouseInterval"
+// const tableName = "as_houseint"
+// const elementName = "HouseInterval"
 
-const schema = `CREATE TABLE ` + tableName + ` (
+func Schema(tableName string) string {
+	return `CREATE TABLE ` + tableName + ` (
     postal_code VARCHAR(6),
 		ifns_fl INT,
 		terr_ifns_fl INT,
@@ -61,7 +54,9 @@ const schema = `CREATE TABLE ` + tableName + ` (
 		norm_doc UUID,
 		counter INT NOT NULL,
 		PRIMARY KEY (house_int_id));`
+}
 
+/*
 func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	defer w.Done()
@@ -179,3 +174,4 @@ func Export(w *sync.WaitGroup, c chan string, db *sqlx.DB, format *string) {
 
 	//fmt.Printf("Total processed items in AddressObjects: %d \n", total)
 }
+*/
